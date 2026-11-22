@@ -246,7 +246,7 @@ if bridge.isHost then
             return false
         end
         loadedPlayers[src] = identifier
-        TriggerEvent('fivem_Bridge:server:playerLoad', src)
+        TriggerEvent('Fivem_Bridge:server:playerLoad', src)
         return true
     end
 
@@ -301,7 +301,7 @@ if bridge.isHost then
     end)
 
     AddEventHandler('QBCore:Server:OnPlayerUnload', function(src)
-        TriggerEvent('fivem_Bridge:server:playerUnload', src)
+        TriggerEvent('Fivem_Bridge:server:playerUnload', src)
     end)
 
     AddEventHandler('QBCore:Server:OnJobUpdate', function(src, job)
@@ -309,7 +309,7 @@ if bridge.isHost then
         if not src or not job then return end
         dutyCache.syncOnDutyPlayer(src, job)
         syncBridgePlayer(src)
-        TriggerEvent('fivem_Bridge:server:playerJobUpdate', src, job.name)
+        TriggerEvent('Fivem_Bridge:server:playerJobUpdate', src, job.name)
     end)
 
     AddEventHandler('QBCore:Server:SetDuty', function(src, _)
@@ -325,10 +325,10 @@ if bridge.isHost then
 
     AddEventHandler('playerDropped', function()
         local src = source
-        TriggerEvent('fivem_Bridge:server:playerUnload', src)
+        TriggerEvent('Fivem_Bridge:server:playerUnload', src)
     end)
 
-    AddEventHandler('fivem_Bridge:server:playerUnload', function(src)
+    AddEventHandler('Fivem_Bridge:server:playerUnload', function(src)
         src = tonumber(src)
         if not src then return end
         loadedPlayers[src] = nil

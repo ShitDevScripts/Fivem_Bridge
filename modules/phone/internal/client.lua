@@ -9,7 +9,7 @@ function phone.GetResourceName()
 end
 
 function phone.SendEmail(email, title, message)
-    return false, print('^6 There is no phone bridged in fivem_Bridge. ^0')
+    return false, print('^6 There is no phone bridged in Fivem_Bridge. ^0')
 end
 
 return phone

@@ -86,7 +86,7 @@ local function handleInternalAlert(payload)
 end
 
 if bridge and bridge.isHost then
-    RegisterNetEvent("fivem_Bridge:dispatch:internalAlert", function(payload)
+    RegisterNetEvent("Fivem_Bridge:dispatch:internalAlert", function(payload)
         if source ~= 65535 then return end
         handleInternalAlert(payload)
     end)

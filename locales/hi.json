@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 अपडेट जाँचे जा रहे हैं...",
-        "version_invalid_repo": "^1[fivem_Bridge] अमान्य रिपॉज़िटरी प्रारूप। अपेक्षित: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] \"{resource}\" के लिए कोई मान्य संस्करण नहीं मिला^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 अपडेट जाँचे जा रहे हैं...",
+        "version_invalid_repo": "^1[Fivem_Bridge] अमान्य रिपॉज़िटरी प्रारूप। अपेक्षित: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] \"{resource}\" के लिए कोई मान्य संस्करण नहीं मिला^7",
         "version_update_available": "^1{resource} के लिए एक अपडेट उपलब्ध है (वर्तमान संस्करण: {version})\r\n - ^5कृपया नवीनतम संस्करण {url} से डाउनलोड करें^7",
         "version_patch_notes": "^3पैच नोट्स:^7",
         "version_entry": "^2संस्करण {version}:^7",

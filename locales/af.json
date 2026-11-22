@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Soek tans na opdaterings...",
-        "version_invalid_repo": "^1[fivem_Bridge] Ongeldige bewaarplekformaat. Verwag: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Geen geldige weergawe vir \"{resource}\" gevind nie^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Soek tans na opdaterings...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Ongeldige bewaarplekformaat. Verwag: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Geen geldige weergawe vir \"{resource}\" gevind nie^7",
         "version_update_available": "^1'n Opdatering is beskikbaar vir {resource} (huidige weergawe: {version})\r\n - ^5Laai asseblief die nuutste weergawe af vanaf {url}^7",
         "version_patch_notes": "^3Regstellingsnotas:^7",
         "version_entry": "^2Weergawe {version}:^7",

@@ -153,7 +153,7 @@ local function migrateLeaderOrDelete(groupId, previousLeader)
 
     data.leader = nextLeader
     syncPlayerState(nextLeader)
-    TriggerEvent('fivem_Bridge:server:taskGroupLeaderChanged', groupId, nextLeader, previousLeader)
+    TriggerEvent('Fivem_Bridge:server:taskGroupLeaderChanged', groupId, nextLeader, previousLeader)
     return 'promoted'
 end
 
@@ -174,7 +174,7 @@ local function removeMember(groupId, src)
     end
 
     syncPlayerState(src)
-    TriggerEvent('fivem_Bridge:server:taskGroupMemberRemoved', groupId, src)
+    TriggerEvent('Fivem_Bridge:server:taskGroupMemberRemoved', groupId, src)
 
     if wasLeader then
         local result = migrateLeaderOrDelete(groupId, src)
@@ -205,7 +205,7 @@ function TaskGroups.create(groupId, leaderSrc)
         syncPlayerState(leaderSrc)
     end
 
-    TriggerEvent('fivem_Bridge:server:taskGroupCreated', groupId, leaderSrc)
+    TriggerEvent('Fivem_Bridge:server:taskGroupCreated', groupId, leaderSrc)
     return true
 end
 
@@ -239,7 +239,7 @@ function TaskGroups.add(groupId, src)
     playerGroups[src][groupId] = true
     syncPlayerState(src)
 
-    TriggerEvent('fivem_Bridge:server:taskGroupMemberAdded', groupId, src)
+    TriggerEvent('Fivem_Bridge:server:taskGroupMemberAdded', groupId, src)
     return true
 end
 
@@ -274,7 +274,7 @@ function TaskGroups.clear(groupId)
     data.order = {}
     data.leader = nil
 
-    TriggerEvent('fivem_Bridge:server:taskGroupCleared', groupId)
+    TriggerEvent('Fivem_Bridge:server:taskGroupCleared', groupId)
     return true
 end
 
@@ -299,7 +299,7 @@ function TaskGroups.delete(groupId)
     end
 
     groups[groupId] = nil
-    TriggerEvent('fivem_Bridge:server:taskGroupDeleted', groupId)
+    TriggerEvent('Fivem_Bridge:server:taskGroupDeleted', groupId)
     return true
 end
 
@@ -347,7 +347,7 @@ function TaskGroups.setLeader(groupId, src)
     end
 
     syncPlayerState(src)
-    TriggerEvent('fivem_Bridge:server:taskGroupLeaderChanged', groupId, src, previousLeader)
+    TriggerEvent('Fivem_Bridge:server:taskGroupLeaderChanged', groupId, src, previousLeader)
     return true
 end
 
@@ -488,7 +488,7 @@ function TaskGroups.createWithOptions(src, options)
     data.leader = src
     syncPlayerState(src)
 
-    TriggerEvent('fivem_Bridge:server:taskGroupCreated', groupId, src)
+    TriggerEvent('Fivem_Bridge:server:taskGroupCreated', groupId, src)
     return groupId
 end
 
@@ -582,7 +582,7 @@ local function callerExists(src)
     return ped ~= 0 and DoesEntityExist(ped)
 end
 
-lib.callback.register('fivem_Bridge:callback:taskGroupsGetMembers', function(source, groupId)
+lib.callback.register('Fivem_Bridge:callback:taskGroupsGetMembers', function(source, groupId)
     local src = source
     if not callerExists(src) then return {} end
     groupId = normalizeGroupId(groupId)
@@ -590,7 +590,7 @@ lib.callback.register('fivem_Bridge:callback:taskGroupsGetMembers', function(sou
     return TaskGroups.getMembers(groupId)
 end)
 
-lib.callback.register('fivem_Bridge:callback:taskGroupsGetLeader', function(source, groupId)
+lib.callback.register('Fivem_Bridge:callback:taskGroupsGetLeader', function(source, groupId)
     local src = source
     if not callerExists(src) then return false end
     groupId = normalizeGroupId(groupId)
@@ -700,38 +700,38 @@ local function pushMenuRefresh(src)
 
     local groupId = TaskGroups.getPrimaryGroupId(src)
 
-    TriggerClientEvent('fivem_Bridge:client:taskGroupMenuRefresh', src, {
+    TriggerClientEvent('Fivem_Bridge:client:taskGroupMenuRefresh', src, {
         groups = TaskGroups.getBrowsableGroups(),
         myGroup = groupId and TaskGroups.buildClientGroup(groupId) or nil,
     })
 end
 
-AddEventHandler('fivem_Bridge:server:taskGroupMemberAdded', function(_, memberSrc)
+AddEventHandler('Fivem_Bridge:server:taskGroupMemberAdded', function(_, memberSrc)
     pushMenuRefresh(memberSrc)
 end)
 
-AddEventHandler('fivem_Bridge:server:taskGroupMemberRemoved', function(_, memberSrc)
+AddEventHandler('Fivem_Bridge:server:taskGroupMemberRemoved', function(_, memberSrc)
     pushMenuRefresh(memberSrc)
 end)
 
-AddEventHandler('fivem_Bridge:server:taskGroupLeaderChanged', function(_, groupId, newLeader, previousLeader)
+AddEventHandler('Fivem_Bridge:server:taskGroupLeaderChanged', function(_, groupId, newLeader, previousLeader)
     pushMenuRefresh(newLeader)
     if previousLeader then pushMenuRefresh(previousLeader) end
 end)
 
-AddEventHandler('fivem_Bridge:server:taskGroupDeleted', function()
+AddEventHandler('Fivem_Bridge:server:taskGroupDeleted', function()
     for src in pairs(menuOpen) do
         pushMenuRefresh(src)
     end
 end)
 
-lib.callback.register('fivem_Bridge:callback:taskGroupMenuGetData', function(source)
+lib.callback.register('Fivem_Bridge:callback:taskGroupMenuGetData', function(source)
     local src = source
     if not callerExists(src) then return false end
     return getMenuPayload(src)
 end)
 
-lib.callback.register('fivem_Bridge:callback:taskGroupMenuFilterInviteCandidates', function(source, serverIds)
+lib.callback.register('Fivem_Bridge:callback:taskGroupMenuFilterInviteCandidates', function(source, serverIds)
     local src = source
     if not callerExists(src) then return {} end
     if type(serverIds) ~= 'table' then return {} end
@@ -750,7 +750,7 @@ lib.callback.register('fivem_Bridge:callback:taskGroupMenuFilterInviteCandidates
     return allowed
 end)
 
-RegisterNetEvent('fivem_Bridge:server:taskGroupMenu:setOpen', function(open)
+RegisterNetEvent('Fivem_Bridge:server:taskGroupMenu:setOpen', function(open)
     local src = source
     if not callerExists(src) then return end
     menuOpen[src] = (open == true) or nil
@@ -761,7 +761,7 @@ AddEventHandler('playerDropped', function()
     joinCodeAttempts[source] = nil
 end)
 
-lib.callback.register('fivem_Bridge:callback:taskGroupMenuCreateGroup', function(source, data)
+lib.callback.register('Fivem_Bridge:callback:taskGroupMenuCreateGroup', function(source, data)
     local src = source
     if not callerExists(src) then return { success = false } end
     if type(data) ~= 'table' then
@@ -789,7 +789,7 @@ lib.callback.register('fivem_Bridge:callback:taskGroupMenuCreateGroup', function
     return payload
 end)
 
-lib.callback.register('fivem_Bridge:callback:taskGroupMenuJoinByCode', function(source, data)
+lib.callback.register('Fivem_Bridge:callback:taskGroupMenuJoinByCode', function(source, data)
     local src = source
     if not callerExists(src) then return { success = false } end
     if not consumeJoinCodeAttempt(src) then
@@ -809,7 +809,7 @@ lib.callback.register('fivem_Bridge:callback:taskGroupMenuJoinByCode', function(
     return payload
 end)
 
-lib.callback.register('fivem_Bridge:callback:taskGroupMenuJoinGroup', function(source, data)
+lib.callback.register('Fivem_Bridge:callback:taskGroupMenuJoinGroup', function(source, data)
     local src = source
     if not callerExists(src) then return { success = false } end
     if type(data) ~= 'table' then
@@ -840,7 +840,7 @@ lib.callback.register('fivem_Bridge:callback:taskGroupMenuJoinGroup', function(s
     return payload
 end)
 
-lib.callback.register('fivem_Bridge:callback:taskGroupMenuLeaveGroup', function(source)
+lib.callback.register('Fivem_Bridge:callback:taskGroupMenuLeaveGroup', function(source)
     local src = source
     if not callerExists(src) then return { success = false } end
     local groupId = TaskGroups.getPrimaryGroupId(src)
@@ -858,7 +858,7 @@ lib.callback.register('fivem_Bridge:callback:taskGroupMenuLeaveGroup', function(
     }
 end)
 
-lib.callback.register('fivem_Bridge:callback:taskGroupMenuKickMember', function(source, data)
+lib.callback.register('Fivem_Bridge:callback:taskGroupMenuKickMember', function(source, data)
     local src = source
     if not callerExists(src) then return { success = false } end
     local groupId = TaskGroups.getPrimaryGroupId(src)
@@ -877,7 +877,7 @@ lib.callback.register('fivem_Bridge:callback:taskGroupMenuKickMember', function(
     return payload
 end)
 
-lib.callback.register('fivem_Bridge:callback:taskGroupMenuDisbandGroup', function(source)
+lib.callback.register('Fivem_Bridge:callback:taskGroupMenuDisbandGroup', function(source)
     local src = source
     if not callerExists(src) then return { success = false } end
     local groupId = TaskGroups.getPrimaryGroupId(src)
@@ -897,7 +897,7 @@ lib.callback.register('fivem_Bridge:callback:taskGroupMenuDisbandGroup', functio
     }
 end)
 
-lib.callback.register('fivem_Bridge:callback:taskGroupMenuInviteMember', function(source, data)
+lib.callback.register('Fivem_Bridge:callback:taskGroupMenuInviteMember', function(source, data)
     local src = source
     if not callerExists(src) then return { success = false } end
     local groupId = TaskGroups.getPrimaryGroupId(src)
@@ -938,5 +938,5 @@ exports('OpenTaskGroupMenu', function(target)
     target = tonumber(target)
     if not target then return end
 
-    TriggerClientEvent('fivem_Bridge:client:openTaskGroupMenu', target)
+    TriggerClientEvent('Fivem_Bridge:client:openTaskGroupMenu', target)
 end)

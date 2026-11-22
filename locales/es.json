@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Buscando actualizaciones...",
-        "version_invalid_repo": "^1[fivem_Bridge] Formato de repositorio no válido. Esperado: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] No se encontró una versión válida para \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Buscando actualizaciones...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Formato de repositorio no válido. Esperado: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] No se encontró una versión válida para \"{resource}\"^7",
         "version_update_available": "^1Hay una actualización disponible para {resource} (versión actual: {version})\r\n - ^5Descarga la última versión desde {url}^7",
         "version_patch_notes": "^3Notas del parche:^7",
         "version_entry": "^2Versión {version}:^7",

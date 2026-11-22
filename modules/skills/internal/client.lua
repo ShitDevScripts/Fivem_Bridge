@@ -3,7 +3,7 @@ local skills = {}
 skills.All = {}
 
 local cachedXp = {}
-local metadataKey = 'fivem_Bridge_skills'
+local metadataKey = 'Fivem_Bridge_skills'
 
 function skills.GetResourceName()
     return 'default'

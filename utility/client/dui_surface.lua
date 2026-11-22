@@ -1,7 +1,7 @@
-if not LoadResourceFile('fivem_Bridge', 'web/build/dui_surface.html') then
+if not LoadResourceFile('Fivem_Bridge', 'web/build/dui_surface.html') then
     local function noUi()
         if Config.Debug then
-            print('^3[fivem_Bridge] DUI surfaces disabled: add web/build/dui_surface.html to enable them.^0')
+            print('^3[Fivem_Bridge] DUI surfaces disabled: add web/build/dui_surface.html to enable them.^0')
         end
         return false
     end
@@ -33,7 +33,7 @@ local minDui, maxDui = 256, 2048
 local drawDistance = 60.0
 local placementMax = 20.0
 local poolMax = 8
-local shellUrl = 'nui://fivem_Bridge/web/build/dui_surface.html'
+local shellUrl = 'nui://Fivem_Bridge/web/build/dui_surface.html'
 local poolShellUrl = shellUrl .. '#pool=1'
 
 local creatorActive, cancelPlacement = false, false

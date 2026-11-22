@@ -25,7 +25,7 @@ function phone.SendEmail(src, email, title, message)
     return received
 end
 
-RegisterNetEvent('fivem_Bridge:Server:genericEmail', function(data)
+RegisterNetEvent('Fivem_Bridge:Server:genericEmail', function(data)
     local src = source
     return phone.SendEmail(src, data.email, data.title, data.message)
 end)

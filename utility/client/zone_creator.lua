@@ -449,7 +449,7 @@ local function deleteClone()
 end
 
 local function enterFreecam(options)
-    TriggerEvent('fivem_Bridge:client:zoneCreatorEnteredFreecam', {
+    TriggerEvent('Fivem_Bridge:client:zoneCreatorEnteredFreecam', {
         name = zoneName,
         type = zoneType,
         anchor = anchor,
@@ -543,7 +543,7 @@ local function closeCreator()
     updateModeKeybind()
 
     if placementMode == 'freecam' and cam then
-        TriggerEvent('fivem_Bridge:client:zoneCreatorExitedFreecam', { name = zoneName, type = zoneType })
+        TriggerEvent('Fivem_Bridge:client:zoneCreatorExitedFreecam', { name = zoneName, type = zoneType })
         exitFreecam()
     elseif placementMode == 'onfoot' then
         unlockMovement()
@@ -664,7 +664,7 @@ local function swapMode()
     if not creatorActive or zoneType ~= 'poly' then return end
 
     if placementMode == 'freecam' then
-        TriggerEvent('fivem_Bridge:client:zoneCreatorExitedFreecam', { name = zoneName, type = zoneType })
+        TriggerEvent('Fivem_Bridge:client:zoneCreatorExitedFreecam', { name = zoneName, type = zoneType })
         exitFreecam()
         placementMode = 'onfoot'
         controlsActive = true

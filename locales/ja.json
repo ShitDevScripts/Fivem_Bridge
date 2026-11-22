@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 アップデートを確認しています...",
-        "version_invalid_repo": "^1[fivem_Bridge] リポジトリ形式が無効です。期待値: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] \"{resource}\" の有効なバージョンが見つかりません^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 アップデートを確認しています...",
+        "version_invalid_repo": "^1[Fivem_Bridge] リポジトリ形式が無効です。期待値: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] \"{resource}\" の有効なバージョンが見つかりません^7",
         "version_update_available": "^1{resource} のアップデートがあります（現在のバージョン: {version}）\r\n - ^5最新版を {url} からダウンロードしてください^7",
         "version_patch_notes": "^3パッチノート:^7",
         "version_entry": "^2バージョン {version}:^7",

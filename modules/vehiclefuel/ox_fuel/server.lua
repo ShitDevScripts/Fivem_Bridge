@@ -9,7 +9,7 @@ function vehiclefuel.set(source, vehicle, amount)
     local netId = NetworkGetNetworkIdFromEntity(vehicle)
     if not netId or netId <= 0 then return false end
 
-    TriggerClientEvent("fivem_Bridge:client:setFuel", source, netId, amount)
+    TriggerClientEvent("Fivem_Bridge:client:setFuel", source, netId, amount)
     return true
 end
 

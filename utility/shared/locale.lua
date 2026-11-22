@@ -38,7 +38,7 @@ Citizen.CreateThreadNow(function()
     end
 
     if not locales then
-        return print(("^1[fivem_Bridge] Failed to load locale file for locale '%s'. Check if the file exists and is a valid JSON.^0"):format(getLocaleCode()))
+        return print(("^1[Fivem_Bridge] Failed to load locale file for locale '%s'. Check if the file exists and is a valid JSON.^0"):format(getLocaleCode()))
     end
 
     localeTree = locales

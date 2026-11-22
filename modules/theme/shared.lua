@@ -46,7 +46,7 @@ local function build()
             elseif isColour(value) then
                 tokens[name] = value
             else
-                print(('^3[fivem_Bridge] Theme token "%s" is not a valid colour (%s), ignoring it.^0'):format(name, tostring(value)))
+                print(('^3[Fivem_Bridge] Theme token "%s" is not a valid colour (%s), ignoring it.^0'):format(name, tostring(value)))
             end
         end
     end
@@ -118,7 +118,7 @@ if bridge.context == 'client' then
         RegisterNUICallback('newbTheme', function(_, cb)
             cb(theme.payload())
         end)
-        AddEventHandler('fivem_Bridge:client:themeChanged', function()
+        AddEventHandler('Fivem_Bridge:client:themeChanged', function()
             cache = nil
             theme.push()
         end)

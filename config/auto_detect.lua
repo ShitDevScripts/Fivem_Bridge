@@ -45,7 +45,7 @@ for module, entry in pairs(modules) do
     local configured = Config[entry.configKey]
     local resolved = resolveAuto(entry, configured)
     if not resolved then
-        print(("^3[fivem_Bridge] No installed provider found for %s (Config.%s = \"auto\"). Install a supported resource or set an explicit provider.^0"):format(module, entry.configKey))
+        print(("^3[Fivem_Bridge] No installed provider found for %s (Config.%s = \"auto\"). Install a supported resource or set an explicit provider.^0"):format(module, entry.configKey))
     end
     Config[entry.configKey] = resolved
     Config.Providers[module] = resolved

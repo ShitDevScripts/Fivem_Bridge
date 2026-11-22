@@ -12,7 +12,7 @@ local function remove(id, target)
         end
     end
 
-    TriggerClientEvent("fivem_Bridge:Interaction:Remove", target or -1, id)
+    TriggerClientEvent("Fivem_Bridge:Interaction:Remove", target or -1, id)
 
     lib.print.debug("Interaction removed:", id, target or "all clients")
     return true

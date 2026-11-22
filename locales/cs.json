@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Kontrola aktualizací...",
-        "version_invalid_repo": "^1[fivem_Bridge] Neplatný formát repozitáře. Očekáváno: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Pro \"{resource}\" nebyla nalezena platná verze^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Kontrola aktualizací...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Neplatný formát repozitáře. Očekáváno: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Pro \"{resource}\" nebyla nalezena platná verze^7",
         "version_update_available": "^1Pro {resource} je k dispozici aktualizace (aktuální verze: {version})\r\n - ^5Stáhněte si nejnovější verzi z {url}^7",
         "version_patch_notes": "^3Poznámky k verzi:^7",
         "version_entry": "^2Verze {version}:^7",

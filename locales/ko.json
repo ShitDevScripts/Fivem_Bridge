@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 업데이트를 확인하는 중...",
-        "version_invalid_repo": "^1[fivem_Bridge] 잘못된 저장소 형식입니다. 예상 형식: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] \"{resource}\"의 유효한 버전을 찾을 수 없습니다^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 업데이트를 확인하는 중...",
+        "version_invalid_repo": "^1[Fivem_Bridge] 잘못된 저장소 형식입니다. 예상 형식: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] \"{resource}\"의 유효한 버전을 찾을 수 없습니다^7",
         "version_update_available": "^1{resource}의 업데이트가 있습니다 (현재 버전: {version})\r\n - ^5최신 버전을 {url}에서 다운로드하세요^7",
         "version_patch_notes": "^3패치 노트:^7",
         "version_entry": "^2버전 {version}:^7",

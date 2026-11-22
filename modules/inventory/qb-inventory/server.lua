@@ -89,7 +89,7 @@ function inventory.getItemInfo(itemName)
 end
 
 function inventory.addItem(inv, item, count, metadata, slot)
-    local added = qbi:AddItem(inv, item, count or 1, slot or false, metadata or false, 'fivem_Bridge')
+    local added = qbi:AddItem(inv, item, count or 1, slot or false, metadata or false, 'Fivem_Bridge')
     if added and tonumber(inv) then
         TriggerClientEvent('qb-inventory:client:ItemBox', inv, QBCore.Shared.Items[item], 'add')
     end
@@ -98,7 +98,7 @@ end
 
 function inventory.removeItem(inv, item, count, metadata, slot)
     slot = resolveRemoveSlot(inv, item, metadata, slot)
-    local removed = qbi:RemoveItem(inv, item, count or 1, slot or false, 'fivem_Bridge')
+    local removed = qbi:RemoveItem(inv, item, count or 1, slot or false, 'Fivem_Bridge')
     if removed and tonumber(inv) then
         TriggerClientEvent('qb-inventory:client:ItemBox', inv, QBCore.Shared.Items[item], 'remove')
     end

@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Provjera ažuriranja...",
-        "version_invalid_repo": "^1[fivem_Bridge] Nevažeći format spremišta. Očekivano: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Nije pronađena važeća verzija za \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Provjera ažuriranja...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Nevažeći format spremišta. Očekivano: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Nije pronađena važeća verzija za \"{resource}\"^7",
         "version_update_available": "^1Dostupno je ažuriranje za {resource} (trenutačna verzija: {version})\r\n - ^5Preuzmi najnoviju verziju s {url}^7",
         "version_patch_notes": "^3Bilješke o zakrpama:^7",
         "version_entry": "^2Verzija {version}:^7",

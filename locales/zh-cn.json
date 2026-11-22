@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 正在检查更新...",
-        "version_invalid_repo": "^1[fivem_Bridge] 仓库格式无效。应为: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] 未找到 \"{resource}\" 的有效版本^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 正在检查更新...",
+        "version_invalid_repo": "^1[Fivem_Bridge] 仓库格式无效。应为: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] 未找到 \"{resource}\" 的有效版本^7",
         "version_update_available": "^1{resource} 有可用更新（当前版本: {version}）\r\n - ^5请从 {url} 下载最新版本^7",
         "version_patch_notes": "^3更新说明:^7",
         "version_entry": "^2版本 {version}:^7",

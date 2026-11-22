@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Frissítések keresése...",
-        "version_invalid_repo": "^1[fivem_Bridge] Érvénytelen adattárformátum. Várt: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Nincs érvényes verzió ehhez: \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Frissítések keresése...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Érvénytelen adattárformátum. Várt: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Nincs érvényes verzió ehhez: \"{resource}\"^7",
         "version_update_available": "^1Frissítés érhető el a(z) {resource} számára (jelenlegi verzió: {version})\r\n - ^5Töltsd le a legújabb verziót innen: {url}^7",
         "version_patch_notes": "^3Javítási jegyzetek:^7",
         "version_entry": "^2Verzió {version}:^7",

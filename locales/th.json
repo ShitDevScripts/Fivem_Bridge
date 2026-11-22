@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 กำลังตรวจสอบการอัปเดต...",
-        "version_invalid_repo": "^1[fivem_Bridge] รูปแบบที่เก็บไม่ถูกต้อง รูปแบบที่คาดไว้: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] ไม่พบเวอร์ชันที่ถูกต้องสำหรับ \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 กำลังตรวจสอบการอัปเดต...",
+        "version_invalid_repo": "^1[Fivem_Bridge] รูปแบบที่เก็บไม่ถูกต้อง รูปแบบที่คาดไว้: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] ไม่พบเวอร์ชันที่ถูกต้องสำหรับ \"{resource}\"^7",
         "version_update_available": "^1มีการอัปเดตสำหรับ {resource} (เวอร์ชันปัจจุบัน: {version})\r\n - ^5โปรดดาวน์โหลดเวอร์ชันล่าสุดจาก {url}^7",
         "version_patch_notes": "^3บันทึกแพตช์:^7",
         "version_entry": "^2เวอร์ชัน {version}:^7",

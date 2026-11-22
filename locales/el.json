@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Έλεγχος ενημερώσεων...",
-        "version_invalid_repo": "^1[fivem_Bridge] Μη έγκυρη μορφή αποθετηρίου. Αναμενόμενο: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Δεν βρέθηκε έγκυρη έκδοση για το \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Έλεγχος ενημερώσεων...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Μη έγκυρη μορφή αποθετηρίου. Αναμενόμενο: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Δεν βρέθηκε έγκυρη έκδοση για το \"{resource}\"^7",
         "version_update_available": "^1Υπάρχει διαθέσιμη ενημέρωση για το {resource} (τρέχουσα έκδοση: {version})\r\n - ^5Κατέβασε την τελευταία έκδοση από {url}^7",
         "version_patch_notes": "^3Σημειώσεις ενημέρωσης:^7",
         "version_entry": "^2Έκδοση {version}:^7",

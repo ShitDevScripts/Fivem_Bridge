@@ -10,7 +10,7 @@ function phone.GetResourceName()
 end
 
 function phone.SendEmail(email, title, message)
-    TriggerServerEvent('fivem_Bridge:Server:okokPhone:sendEmail', email, title, message)
+    TriggerServerEvent('Fivem_Bridge:Server:okokPhone:sendEmail', email, title, message)
     return true
 end
 

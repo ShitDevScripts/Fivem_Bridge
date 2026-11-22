@@ -1,6 +1,6 @@
 local interactions = {}
 
-local points = assert(_G.InteractionPointManager, 'fivem_Bridge: interaction_points.lua must load before interactions.lua')
+local points = assert(_G.InteractionPointManager, 'Fivem_Bridge: interaction_points.lua must load before interactions.lua')
 
 local function toVector3(coords)
     if not coords then return end
@@ -338,7 +338,7 @@ local function refreshForJobChange()
     points.refreshProximity()
 end
 
-AddEventHandler('fivem_Bridge:client:playerJobUpdate', refreshForJobChange)
+AddEventHandler('Fivem_Bridge:client:playerJobUpdate', refreshForJobChange)
 
 local function remove(id)
     if not id then
@@ -727,7 +727,7 @@ end)
 exports('RemoveInteraction', function(id) return remove(id) end)
 exports('UpdateInteraction', function(id, updates) return update(id, updates) end)
 
-RegisterNetEvent('fivem_Bridge:Interaction:Remove', function(id)
+RegisterNetEvent('Fivem_Bridge:Interaction:Remove', function(id)
     if source ~= 65535 then return end
     remove(id)
 end)

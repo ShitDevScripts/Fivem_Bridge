@@ -76,7 +76,7 @@ function dispatch.sendAlert(src, jobs, coords, data, blip, alertFlash)
     if not next(targets) then return false end
 
     for _, targetSrc in ipairs(targets) do
-        TriggerClientEvent('fivem_Bridge:dispatch:internalAlert', targetSrc, payload)
+        TriggerClientEvent('Fivem_Bridge:dispatch:internalAlert', targetSrc, payload)
     end
 
     return true

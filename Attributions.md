@@ -1,4 +1,4 @@
-> This build is `fivem_Bridge`, adapted from **Newb_Bridge** by MrNewb. All original attributions below are preserved verbatim.
+> This build is `Fivem_Bridge`, adapted from **Newb_Bridge** by MrNewb. All original attributions below are preserved verbatim.
 >
 > It also includes modules adapted from **community_bridge** by The Order of the Sacred Framework (see `README.md`). Those files carry their own banner and keep their upstream credit notices where present.
 

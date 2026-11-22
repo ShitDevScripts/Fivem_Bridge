@@ -2,10 +2,10 @@ fx_version "cerulean"
 game "gta5"
 lua54 "yes"
 
-name "fivem_Bridge"
+name "Fivem_Bridge"
 
 author "MrNewb"
-description "fivem_Bridge is a framework agnostic resource that provides a simple way to create bridges between your resources and other resources. It is designed to be easy to use and understand, while also being powerful enough to handle complex use cases."
+description "Fivem_Bridge is a framework agnostic resource that provides a simple way to create bridges between your resources and other resources. It is designed to be easy to use and understand, while also being powerful enough to handle complex use cases."
 version "0.0.5"
 
 dependencies {

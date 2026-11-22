@@ -52,18 +52,18 @@ function TaskGroups.getMembers(groupId)
     groupId = normalizeGroupId(groupId)
     if not groupId then return {} end
 
-    return safeAwait('fivem_Bridge:callback:taskGroupsGetMembers', {}, groupId)
+    return safeAwait('Fivem_Bridge:callback:taskGroupsGetMembers', {}, groupId)
 end
 
 function TaskGroups.getLeader(groupId)
     groupId = normalizeGroupId(groupId)
     if not groupId then return false end
 
-    return safeAwait('fivem_Bridge:callback:taskGroupsGetLeader', false, groupId)
+    return safeAwait('Fivem_Bridge:callback:taskGroupsGetLeader', false, groupId)
 end
 
 AddStateBagChangeHandler('taskGroups', ('player:%s'):format(cache.serverId), function(_, _, value)
-    TriggerEvent('fivem_Bridge:client:taskGroupsChanged', value or {})
+    TriggerEvent('Fivem_Bridge:client:taskGroupsChanged', value or {})
 end)
 
 exports('IsInTaskGroup', TaskGroups.has)
@@ -82,33 +82,33 @@ local menuOpen = false
 local function closeMenu()
     if not menuOpen then return end
     menuOpen = false
-    TriggerServerEvent('fivem_Bridge:server:taskGroupMenu:setOpen', false)
+    TriggerServerEvent('Fivem_Bridge:server:taskGroupMenu:setOpen', false)
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'taskGroupMenu:close' })
 end
 
 local function openMenu()
     if menuOpen then return end
-    local data = safeAwait('fivem_Bridge:callback:taskGroupMenuGetData', false)
+    local data = safeAwait('Fivem_Bridge:callback:taskGroupMenuGetData', false)
     if not data then return end
     menuOpen = true
-    TriggerServerEvent('fivem_Bridge:server:taskGroupMenu:setOpen', true)
+    TriggerServerEvent('Fivem_Bridge:server:taskGroupMenu:setOpen', true)
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'taskGroupMenu:open', data = data })
 end
 
-RegisterNetEvent('fivem_Bridge:client:openTaskGroupMenu', function()
+RegisterNetEvent('Fivem_Bridge:client:openTaskGroupMenu', function()
     if source ~= 65535 then return end
     openMenu()
 end)
 
-RegisterNetEvent('fivem_Bridge:client:taskGroupMenuRefresh', function(data)
+RegisterNetEvent('Fivem_Bridge:client:taskGroupMenuRefresh', function(data)
     if source ~= 65535 then return end
     if not menuOpen or not data then return end
     SendNUIMessage({ action = 'taskGroupMenu:refresh', data = data })
 end)
 
-AddEventHandler('fivem_Bridge:client:playerUnload', function()
+AddEventHandler('Fivem_Bridge:client:playerUnload', function()
     closeMenu()
 end)
 
@@ -118,25 +118,25 @@ RegisterNUICallback('taskGroupMenu:close', function(_, cb)
 end)
 
 RegisterNUICallback('taskGroupMenu:createGroup', function(data, cb)
-    cb(safeAwait('fivem_Bridge:callback:taskGroupMenuCreateGroup', { success = false }, data))
+    cb(safeAwait('Fivem_Bridge:callback:taskGroupMenuCreateGroup', { success = false }, data))
 end)
 RegisterNUICallback('taskGroupMenu:joinByCode', function(data, cb)
-    cb(safeAwait('fivem_Bridge:callback:taskGroupMenuJoinByCode', { success = false }, data))
+    cb(safeAwait('Fivem_Bridge:callback:taskGroupMenuJoinByCode', { success = false }, data))
 end)
 RegisterNUICallback('taskGroupMenu:joinGroup', function(data, cb)
-    cb(safeAwait('fivem_Bridge:callback:taskGroupMenuJoinGroup', { success = false }, data))
+    cb(safeAwait('Fivem_Bridge:callback:taskGroupMenuJoinGroup', { success = false }, data))
 end)
 RegisterNUICallback('taskGroupMenu:leaveGroup', function(_, cb)
-    cb(safeAwait('fivem_Bridge:callback:taskGroupMenuLeaveGroup', { success = false }))
+    cb(safeAwait('Fivem_Bridge:callback:taskGroupMenuLeaveGroup', { success = false }))
 end)
 RegisterNUICallback('taskGroupMenu:kickMember', function(data, cb)
-    cb(safeAwait('fivem_Bridge:callback:taskGroupMenuKickMember', { success = false }, data))
+    cb(safeAwait('Fivem_Bridge:callback:taskGroupMenuKickMember', { success = false }, data))
 end)
 RegisterNUICallback('taskGroupMenu:disbandGroup', function(_, cb)
-    cb(safeAwait('fivem_Bridge:callback:taskGroupMenuDisbandGroup', { success = false }))
+    cb(safeAwait('Fivem_Bridge:callback:taskGroupMenuDisbandGroup', { success = false }))
 end)
 RegisterNUICallback('taskGroupMenu:inviteMember', function(data, cb)
-    cb(safeAwait('fivem_Bridge:callback:taskGroupMenuInviteMember', { success = false }, data))
+    cb(safeAwait('Fivem_Bridge:callback:taskGroupMenuInviteMember', { success = false }, data))
 end)
 
 RegisterNUICallback('taskGroupMenu:copyJoinCode', function(data, cb)
@@ -163,7 +163,7 @@ RegisterNUICallback('taskGroupMenu:getNearbyCandidates', function(_, cb)
         serverIds[i] = GetPlayerServerId(nearby[i].id)
     end
 
-    local allowed    = safeAwait('fivem_Bridge:callback:taskGroupMenuFilterInviteCandidates', {}, serverIds)
+    local allowed    = safeAwait('Fivem_Bridge:callback:taskGroupMenuFilterInviteCandidates', {}, serverIds)
     local candidates = {}
     for i = 1, #allowed do
         local target = allowed[i]

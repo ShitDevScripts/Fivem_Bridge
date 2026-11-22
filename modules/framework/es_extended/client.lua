@@ -38,14 +38,14 @@ RegisterNetEvent('esx:playerLoaded', function()
         local data = getPlayerData()
         CachedPlayerJob = data and data.job
 
-        TriggerEvent('fivem_Bridge:client:playerLoad')
+        TriggerEvent('Fivem_Bridge:client:playerLoad')
     end)
 end)
 
 RegisterNetEvent('esx:onPlayerLogout', function()
     if bridge.isHost then
         CachedPlayerJob = nil
-        TriggerEvent('fivem_Bridge:client:playerUnload')
+        TriggerEvent('Fivem_Bridge:client:playerUnload')
     end
 end)
 
@@ -55,7 +55,7 @@ RegisterNetEvent('esx:setJob', function(job)
     CachedPlayerJob = job
 
     TriggerEvent(
-        'fivem_Bridge:client:playerJobUpdate',
+        'Fivem_Bridge:client:playerJobUpdate',
         job.name,
         job.label,
         job.grade_name or job.grade_label,
@@ -126,7 +126,7 @@ function framework.getPlayerJobData()
 end
 
 function framework.getFrameworkJobs()
-    local ok, jobs = pcall(lib.callback.await, 'fivem_Bridge:callback:getFrameworkJobs', false)
+    local ok, jobs = pcall(lib.callback.await, 'Fivem_Bridge:callback:getFrameworkJobs', false)
     return ok and jobs or {}
 end
 

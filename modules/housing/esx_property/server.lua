@@ -2,12 +2,12 @@ local housing = {}
 
 RegisterNetEvent('esx_property:enter', function(insideId)
     local src = source
-    TriggerEvent('fivem_Bridge:Server:_OnPlayerInside', src, insideId)
+    TriggerEvent('Fivem_Bridge:Server:_OnPlayerInside', src, insideId)
 end)
 
 RegisterNetEvent('esx_property:leave', function(insideId)
     local src = source
-    TriggerEvent('fivem_Bridge:Server:_OnPlayerInside', src, insideId)
+    TriggerEvent('Fivem_Bridge:Server:_OnPlayerInside', src, insideId)
 end)
 
 function housing.GetResourceName()

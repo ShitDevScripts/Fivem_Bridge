@@ -1,12 +1,12 @@
-# fivem_Bridge — Usage Examples
+# Fivem_Bridge — Usage Examples
 
-All examples assume you load the bridge in your resource via `shared_script '@fivem_Bridge/import.lua'` (or the correct path/name of this resource). Use `bridge` (global set by import) or the exported helpers.
+All examples assume you load the bridge in your resource via `shared_script '@Fivem_Bridge/import.lua'` (or the correct path/name of this resource). Use `bridge` (global set by import) or the exported helpers.
 
 ## Require / access
 
 ```lua
--- In any resource that depends on fivem_Bridge
-local Bridge = exports.fivem_Bridge
+-- In any resource that depends on Fivem_Bridge
+local Bridge = exports.Fivem_Bridge
 -- or use the global `bridge` after import.lua loads
 ```
 

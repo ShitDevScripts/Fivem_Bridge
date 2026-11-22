@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Tjekker for opdateringer...",
-        "version_invalid_repo": "^1[fivem_Bridge] Ugyldigt repository-format. Forventet: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Ingen gyldig version fundet for \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Tjekker for opdateringer...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Ugyldigt repository-format. Forventet: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Ingen gyldig version fundet for \"{resource}\"^7",
         "version_update_available": "^1En opdatering er tilgængelig for {resource} (nuværende version: {version})\r\n - ^5Download den nyeste version fra {url}^7",
         "version_patch_notes": "^3Patchnoter:^7",
         "version_entry": "^2Version {version}:^7",

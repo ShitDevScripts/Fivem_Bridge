@@ -13,7 +13,7 @@ function vehiclefuel.set(source, vehicle, amount)
         return false
     end
 
-    TriggerClientEvent("fivem_Bridge:client:setFuel", source, netId, amount)
+    TriggerClientEvent("Fivem_Bridge:client:setFuel", source, netId, amount)
     return true
 end
 

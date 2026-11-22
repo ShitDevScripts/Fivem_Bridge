@@ -25,7 +25,7 @@ function phone.SendEmail(src, email, title, message)
     })
 end
 
-RegisterNetEvent('fivem_Bridge:Server:okokPhone:sendEmail', function(email, title, message)
+RegisterNetEvent('Fivem_Bridge:Server:okokPhone:sendEmail', function(email, title, message)
     phone.SendEmail(source, email, title, message)
 end)
 

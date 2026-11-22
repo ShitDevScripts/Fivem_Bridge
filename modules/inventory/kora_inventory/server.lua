@@ -241,7 +241,7 @@ end
 
 function inventory.addItem(inv, item, count, metadata, slot)
     if isPlayer(inv) then
-        return kora:addItem(inv, item, count or 1, slot, koraMetadata(metadata), 'fivem_Bridge')
+        return kora:addItem(inv, item, count or 1, slot, koraMetadata(metadata), 'Fivem_Bridge')
     end
 
     return stashAdd(inv, item, count, metadata, slot)
@@ -255,7 +255,7 @@ function inventory.removeItem(inv, item, count, metadata, slot)
     end
 
     if slot or not metadata then
-        return kora:removeItem(inv, item, count, slot, 'fivem_Bridge')
+        return kora:removeItem(inv, item, count, slot, 'Fivem_Bridge')
     end
 
     local remaining = count
@@ -263,7 +263,7 @@ function inventory.removeItem(inv, item, count, metadata, slot)
         if remaining <= 0 then break end
 
         local take = math.min(entry.amount, remaining)
-        local ok, reason = kora:removeItem(inv, item, take, entry.slot, 'fivem_Bridge')
+        local ok, reason = kora:removeItem(inv, item, take, entry.slot, 'Fivem_Bridge')
         if not ok then return false, reason end
         remaining = remaining - take
     end

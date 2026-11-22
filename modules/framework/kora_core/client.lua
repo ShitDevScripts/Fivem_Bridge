@@ -22,7 +22,7 @@ local function notifyJobUpdate()
     local job = getJob()
     if not job then return end
 
-    TriggerEvent('fivem_Bridge:client:playerJobUpdate', job.name, job.label, job.grade and job.grade.name, gradeLevel(job))
+    TriggerEvent('Fivem_Bridge:client:playerJobUpdate', job.name, job.label, job.grade and job.grade.name, gradeLevel(job))
 end
 
 if bridge.isHost then
@@ -33,7 +33,7 @@ if bridge.isHost then
         if charId and charId == loadedCharId then return end
 
         loadedCharId = charId
-        TriggerEvent('fivem_Bridge:client:playerLoad')
+        TriggerEvent('Fivem_Bridge:client:playerLoad')
     end)
 
     local serverId = GetPlayerServerId(PlayerId())
@@ -42,7 +42,7 @@ if bridge.isHost then
         if value ~= false then return end
 
         loadedCharId = nil
-        TriggerEvent('fivem_Bridge:client:playerUnload')
+        TriggerEvent('Fivem_Bridge:client:playerUnload')
     end)
 
     kora:onPlayerDataChange({ 'job' }, function()

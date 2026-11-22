@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 جارٍ التحقق من التحديثات...",
-        "version_invalid_repo": "^1[fivem_Bridge] تنسيق المستودع غير صالح. المتوقع: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] لم يُعثر على إصدار صالح لـ \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 جارٍ التحقق من التحديثات...",
+        "version_invalid_repo": "^1[Fivem_Bridge] تنسيق المستودع غير صالح. المتوقع: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] لم يُعثر على إصدار صالح لـ \"{resource}\"^7",
         "version_update_available": "^1يتوفر تحديث لـ {resource} (الإصدار الحالي: {version})\r\n - ^5يرجى تنزيل أحدث إصدار من {url}^7",
         "version_patch_notes": "^3ملاحظات التحديث:^7",
         "version_entry": "^2الإصدار {version}:^7",

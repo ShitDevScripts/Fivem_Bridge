@@ -1,5 +1,5 @@
 if bridge.context == 'client' and bridge.isHost then
-    RegisterNetEvent('fivem_Bridge:client:notify', function(data)
+    RegisterNetEvent('Fivem_Bridge:client:notify', function(data)
         if source ~= 65535 then return end
         bridge.notifications.notify(data)
     end)

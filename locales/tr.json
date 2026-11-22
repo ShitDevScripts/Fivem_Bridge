@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Güncellemeler kontrol ediliyor...",
-        "version_invalid_repo": "^1[fivem_Bridge] Geçersiz depo biçimi. Beklenen: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] \"{resource}\" için geçerli sürüm bulunamadı^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Güncellemeler kontrol ediliyor...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Geçersiz depo biçimi. Beklenen: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] \"{resource}\" için geçerli sürüm bulunamadı^7",
         "version_update_available": "^1{resource} için bir güncelleme var (mevcut sürüm: {version})\r\n - ^5Lütfen en son sürümü {url} adresinden indir^7",
         "version_patch_notes": "^3Yama notları:^7",
         "version_entry": "^2Sürüm {version}:^7",

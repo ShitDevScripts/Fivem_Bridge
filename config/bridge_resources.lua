@@ -28,7 +28,7 @@ Config.BossMenu = "auto"
 
 Config.Dispatch = "auto"
 
-Config.Banking = "ShitDevScripts-Banking"
+Config.Banking = "auto"
 
 Config.Doorlock = "auto"
 

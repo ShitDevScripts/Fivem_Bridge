@@ -245,7 +245,7 @@ if bridge.isHost then
             return false
         end
         loadedPlayers[src] = identifier
-        TriggerEvent('fivem_Bridge:server:playerLoad', src)
+        TriggerEvent('Fivem_Bridge:server:playerLoad', src)
         return true
     end
 
@@ -268,7 +268,7 @@ if bridge.isHost then
         loadedPlayers[src] = nil
         dutyCache.clearOnDutyPlayer(src)
         BridgePlayers.remove(src)
-        TriggerEvent('fivem_Bridge:server:playerUnload', src)
+        TriggerEvent('Fivem_Bridge:server:playerUnload', src)
     end
 
     CreateThread(function()
@@ -299,7 +299,7 @@ if bridge.isHost then
 
         dutyCache.syncOnDutyPlayer(src, job)
         syncBridgePlayer(src)
-        TriggerEvent('fivem_Bridge:server:playerJobUpdate', src, job.name)
+        TriggerEvent('Fivem_Bridge:server:playerJobUpdate', src, job.name)
     end)
 
     AddEventHandler('kora_core:server:playerDropped', function(src)

@@ -2,7 +2,7 @@ Config = Config or {}
 
 local LoadResourceFile = LoadResourceFile
 local thisResource = GetCurrentResourceName()
-local hostResource = LoadResourceFile(thisResource, "config/bridge_resources.lua") and thisResource or "fivem_Bridge"
+local hostResource = LoadResourceFile(thisResource, "config/bridge_resources.lua") and thisResource or "Fivem_Bridge"
 local isHost = thisResource == hostResource
 local runtime = IsDuplicityVersion() and "server" or "client"
 
@@ -129,7 +129,7 @@ local function mountModule(self, module)
 
     if #sources == 0 then
         if provider then
-            print(("^3[fivem_Bridge] Module '%s' has no %s implementation for provider '%s'. Add modules/%s/%s/%s.lua, or pick a supported provider in config/bridge_resources.lua (options are listed in config/auto_detect.lua).^0"):format(module, runtime, provider, module, provider, runtime))
+            print(("^3[Fivem_Bridge] Module '%s' has no %s implementation for provider '%s'. Add modules/%s/%s/%s.lua, or pick a supported provider in config/bridge_resources.lua (options are listed in config/auto_detect.lua).^0"):format(module, runtime, provider, module, provider, runtime))
         end
         self[module] = noopModule
         mounting[module] = nil
@@ -158,7 +158,7 @@ local function mountModule(self, module)
     if module == "notifications" and runtime == "client" and api ~= noopModule and type(api) == "table" and type(api.notify) == "function" then
         local showNotification = api.notify
         function api.notify(data)
-            TriggerEvent("fivem_Bridge:Client:NotifyShown", data)
+            TriggerEvent("Fivem_Bridge:Client:NotifyShown", data)
             return showNotification(data)
         end
     end
@@ -168,10 +168,10 @@ local function mountModule(self, module)
         function api.sendAlert(src, jobs, coords, data, blip, alertFlash)
             local ok, sent = pcall(sendDispatchAlert, src, jobs, coords, type(data) == "table" and data or {}, type(blip) == "table" and blip or {}, alertFlash)
             if not ok then
-                print(("^1[fivem_Bridge] Dispatch provider '%s' failed: %s^0"):format(tostring(provider), tostring(sent)))
+                print(("^1[Fivem_Bridge] Dispatch provider '%s' failed: %s^0"):format(tostring(provider), tostring(sent)))
                 sent = false
             end
-            TriggerEvent("fivem_Bridge:Server:DispatchAlert", src, jobs, coords, data, blip, alertFlash)
+            TriggerEvent("Fivem_Bridge:Server:DispatchAlert", src, jobs, coords, data, blip, alertFlash)
             return sent
         end
     end
@@ -250,7 +250,7 @@ if isHost then
             waited = waited + 25
             if waited >= 15000 then
                 mounting[module] = nil
-                print(("^1[fivem_Bridge] Timed out waiting for module '%s' to mount.^0"):format(module))
+                print(("^1[Fivem_Bridge] Timed out waiting for module '%s' to mount.^0"):format(module))
                 return rawget(bridge, module) or noopModule
             end
             api = rawget(bridge, module)

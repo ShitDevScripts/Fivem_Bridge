@@ -14,7 +14,7 @@ function vehiclefuel.set(vehicle, amount)
 end
 
 if bridge.isHost then
-    RegisterNetEvent("fivem_Bridge:client:setFuel", function(netId, amount)
+    RegisterNetEvent("Fivem_Bridge:client:setFuel", function(netId, amount)
         if source ~= 65535 then return end
         setFuel(NetworkGetEntityFromNetworkId(netId), amount)
     end)

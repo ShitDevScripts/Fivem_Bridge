@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Проверка обновлений...",
-        "version_invalid_repo": "^1[fivem_Bridge] Неверный формат репозитория. Ожидается: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Не найдена корректная версия для \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Проверка обновлений...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Неверный формат репозитория. Ожидается: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Не найдена корректная версия для \"{resource}\"^7",
         "version_update_available": "^1Доступно обновление для {resource} (текущая версия: {version})\r\n - ^5Скачайте последнюю версию с {url}^7",
         "version_patch_notes": "^3Заметки к патчу:^7",
         "version_entry": "^2Версия {version}:^7",

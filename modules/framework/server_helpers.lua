@@ -268,7 +268,7 @@ function ServerHelpers.attachSharedFrameworkApi(framework, dutyCache, registerUs
 
             return registerActiveUsableItem(itemName, function(src, item, itemData)
                 if GetResourceState(ownerResource) ~= 'started' then
-                    print(('^3[fivem_Bridge] Skipping use of "%s": owner resource "%s" is not started (stale usable-item callback).^0'):format(itemName, ownerResource))
+                    print(('^3[Fivem_Bridge] Skipping use of "%s": owner resource "%s" is not started (stale usable-item callback).^0'):format(itemName, ownerResource))
                     return
                 end
 

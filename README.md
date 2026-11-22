@@ -8,7 +8,7 @@ This build is adapted from **Newb_Bridge** by **MrNewb** and from **community_br
 
 Huge thanks to **MrNewb** and everyone behind **Newb_Bridge**. The module system, the provider adapters and the utility code saved a ton of work and gave this bridge its shape.
 
-Also huge thanks to **The Order of the Sacred Framework** and the contributors to **community_bridge**. The extra provider adapters (clothing, doorlock, housing, phone, skills, weather, zones and more) came from there. Community Bridge category names were mapped to this bridge's names (`fuel` → `vehiclefuel`, `input` → `inputs`, `notify` → `notifications`, `vehiclekey` → `vehiclekeys`, `helptext` → `textui`, `_default` → `internal`) and its `community_bridge:` events were renamed to `fivem_Bridge:`.
+Also huge thanks to **The Order of the Sacred Framework** and the contributors to **community_bridge**. The extra provider adapters (clothing, doorlock, housing, phone, skills, weather, zones and more) came from there. Community Bridge category names were mapped to this bridge's names (`fuel` → `vehiclefuel`, `input` → `inputs`, `notify` → `notifications`, `vehiclekey` → `vehiclekeys`, `helptext` → `textui`, `_default` → `internal`) and its `community_bridge:` events were renamed to `Fivem_Bridge:`.
 
 Thanks also to the teams behind **ox_lib**, **oxmysql** and everyone else listed in [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
 
@@ -17,7 +17,7 @@ The upstream Lua code is licensed **GPL-3.0**. Those notices are kept on purpose
 ## What is in here
 
 ```
-fivem_Bridge/
+Fivem_Bridge/
 ├── config/            provider selection and debug/version settings
 │   ├── bridge_resources.lua
 │   └── auto_detect.lua
@@ -46,14 +46,14 @@ All upstream utilities are present. The ones that drew NUI (`dialogue`, `gizmo`,
 
 ## Install
 
-1. Put this folder in your `resources/` directory as `fivem_Bridge` (the name is hardcoded in `import.lua`, so keep the folder name as-is).
+1. Put this folder in your `resources/` directory as `Fivem_Bridge` (the name is hardcoded in `import.lua`, so keep the folder name as-is).
 2. Make sure `ox_lib` and `oxmysql` are installed and started first.
 3. Add to `server.cfg`:
 
 ```cfg
 ensure ox_lib
 ensure oxmysql
-ensure fivem_Bridge
+ensure Fivem_Bridge
 ```
 
 4. Set `ox:locale` if you want a language other than English: `setr ox:locale en`.
@@ -63,7 +63,7 @@ Other resources can use the bridge by adding this to their `fxmanifest.lua`:
 
 ```lua
 shared_scripts {
-    '@fivem_Bridge/import.lua',
+    '@Fivem_Bridge/import.lua',
 }
 ```
 
@@ -71,14 +71,14 @@ then:
 
 ```lua
 local player = bridge.framework.GetPlayer(source)
-bridge.notify({ message = 'Hello from fivem_Bridge', type = 'success' })
+bridge.notify({ message = 'Hello from Fivem_Bridge', type = 'success' })
 ```
 
 ## What changed from the upstream build
 
-- Resource renamed to `fivem_Bridge`; events, console prefixes, locale brand and export host lookup now use that name.
+- Resource renamed to `Fivem_Bridge`; events, console prefixes, locale brand and export host lookup now use that name.
 - `Config` lives in `config/` (`bridge_resources.lua`, `theme.lua`, `auto_detect.lua`); paths match `fxmanifest.lua` and `import.lua`.
-- Resource name is hardcoded as `fivem_Bridge` in `import.lua`; no config value or convar controls it.
+- Resource name is hardcoded as `Fivem_Bridge` in `import.lua`; no config value or convar controls it.
 - Added a debug startup banner showing context, module count and host resource.
 - Web/NUI assets removed; DUI utilities degrade safely when the page is missing.
 - Theme module, `config/theme.lua` and the `GetTheme`/`GetThemeCss` exports removed (no UI to theme).

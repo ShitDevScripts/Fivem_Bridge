@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Controleren op updates...",
-        "version_invalid_repo": "^1[fivem_Bridge] Ongeldig repositoryformaat. Verwacht: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Geen geldige versie gevonden voor \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Controleren op updates...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Ongeldig repositoryformaat. Verwacht: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Geen geldige versie gevonden voor \"{resource}\"^7",
         "version_update_available": "^1Er is een update beschikbaar voor {resource} (huidige versie: {version})\r\n - ^5Download de nieuwste versie van {url}^7",
         "version_patch_notes": "^3Patchnotes:^7",
         "version_entry": "^2Versie {version}:^7",

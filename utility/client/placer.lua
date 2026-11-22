@@ -1334,5 +1334,5 @@ AddEventHandler('onResourceStop', function(resource)
     closeUI()
 end)
 
-lib.callback.register('fivem_Bridge:callback:PlaceProp', propPlacer)
+lib.callback.register('Fivem_Bridge:callback:PlaceProp', propPlacer)
 exports('PropPlacer', propPlacer)

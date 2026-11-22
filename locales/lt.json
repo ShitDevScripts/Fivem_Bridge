@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Tikrinama, ar yra atnaujinimų...",
-        "version_invalid_repo": "^1[fivem_Bridge] Netinkamas saugyklos formatas. Tikimasi: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Nerasta tinkamos versijos \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Tikrinama, ar yra atnaujinimų...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Netinkamas saugyklos formatas. Tikimasi: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Nerasta tinkamos versijos \"{resource}\"^7",
         "version_update_available": "^1Yra atnaujinimas {resource} (dabartinė versija: {version})\r\n - ^5Atsisiųskite naujausią versiją iš {url}^7",
         "version_patch_notes": "^3Pataisų pastabos:^7",
         "version_entry": "^2Versija {version}:^7",

@@ -9,11 +9,11 @@ function phone.GetResourceName()
 end
 
 function phone.GetPlayerPhone(src)
-    return false, print('^6 There is no phone bridged in fivem_Bridge. ^0')
+    return false, print('^6 There is no phone bridged in Fivem_Bridge. ^0')
 end
 
 function phone.SendEmail(src, email, title, message)
-    return false, print('^6 There is no phone bridged in fivem_Bridge. ^0')
+    return false, print('^6 There is no phone bridged in Fivem_Bridge. ^0')
 end
 
 return phone

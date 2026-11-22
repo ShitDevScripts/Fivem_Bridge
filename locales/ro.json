@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Se caută actualizări...",
-        "version_invalid_repo": "^1[fivem_Bridge] Format de depozit invalid. Așteptat: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Nicio versiune validă găsită pentru \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Se caută actualizări...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Format de depozit invalid. Așteptat: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Nicio versiune validă găsită pentru \"{resource}\"^7",
         "version_update_available": "^1Este disponibilă o actualizare pentru {resource} (versiunea curentă: {version})\r\n - ^5Descarcă cea mai recentă versiune de la {url}^7",
         "version_patch_notes": "^3Note de actualizare:^7",
         "version_entry": "^2Versiunea {version}:^7",

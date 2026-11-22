@@ -14,7 +14,7 @@ function phone.GetPlayerPhone(src)
 end
 
 function phone.SendEmail(src, email, title, message)
-    TriggerClientEvent('fivem_Bridge:Server:genericEmail', src, { sender = email, subject = title, message = message, button = {} })
+    TriggerClientEvent('Fivem_Bridge:Server:genericEmail', src, { sender = email, subject = title, message = message, button = {} })
     return true
 end
 

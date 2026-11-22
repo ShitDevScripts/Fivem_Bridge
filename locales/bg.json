@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Проверка за обновления...",
-        "version_invalid_repo": "^1[fivem_Bridge] Невалиден формат на хранилището. Очаквано: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Не е намерена валидна версия за \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Проверка за обновления...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Невалиден формат на хранилището. Очаквано: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Не е намерена валидна версия за \"{resource}\"^7",
         "version_update_available": "^1Налично е обновление за {resource} (текуща версия: {version})\r\n - ^5Изтегли най-новата версия от {url}^7",
         "version_patch_notes": "^3Бележки към версията:^7",
         "version_entry": "^2Версия {version}:^7",

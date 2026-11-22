@@ -1,6 +1,6 @@
 local shops = {}
 
-RegisterNetEvent('fivem_Bridge:Client:openShop', function(shopType, shopLabel, shopData)
+RegisterNetEvent('Fivem_Bridge:Client:openShop', function(shopType, shopLabel, shopData)
     if source ~= 65535 then return end
     if shopType ~= 'shop' or not shopLabel or not shopData then return end
     shops.OpenShop(shopLabel, shopData.inventory)
@@ -16,7 +16,7 @@ function shops.FinalizeCheckOut(shopName, item, itemLabel, price, amount)
             description = ('Are you sure you want to purchase a %s?'):format(itemLabel),
             icon = 'fa-solid fa-money-bill-wave',
             onSelect = function()
-                TriggerServerEvent('fivem_Bridge:Server:completeCheckout', shopName, item, amount, 'money')
+                TriggerServerEvent('Fivem_Bridge:Server:completeCheckout', shopName, item, amount, 'money')
             end,
         },
         {
@@ -24,7 +24,7 @@ function shops.FinalizeCheckOut(shopName, item, itemLabel, price, amount)
             description = ('Are you sure you want to purchase a %s?'):format(itemLabel),
             icon = 'fa-solid fa-building-columns',
             onSelect = function()
-                TriggerServerEvent('fivem_Bridge:Server:completeCheckout', shopName, item, amount, 'bank')
+                TriggerServerEvent('Fivem_Bridge:Server:completeCheckout', shopName, item, amount, 'bank')
             end,
         },
     }

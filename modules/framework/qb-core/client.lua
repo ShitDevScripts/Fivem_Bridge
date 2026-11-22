@@ -28,14 +28,14 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
         local data = getPlayerData()
         CachedPlayerJob = data and data.job
 
-        TriggerEvent('fivem_Bridge:client:playerLoad')
+        TriggerEvent('Fivem_Bridge:client:playerLoad')
     end)
 end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
     if not bridge.isHost then return end
     CachedPlayerJob = nil
-    TriggerEvent('fivem_Bridge:client:playerUnload')
+    TriggerEvent('Fivem_Bridge:client:playerUnload')
 end)
 
 RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
@@ -46,7 +46,7 @@ RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
     local gradeName = job.grade and job.grade.name or job.grade_label
     local gradeLevel = job.grade and job.grade.level or job.grade
 
-    TriggerEvent('fivem_Bridge:client:playerJobUpdate', job.name, job.label, gradeName, gradeLevel)
+    TriggerEvent('Fivem_Bridge:client:playerJobUpdate', job.name, job.label, gradeName, gradeLevel)
 end)
 
 RegisterNetEvent('QBCore:Client:SetDuty', function(onDuty)
@@ -62,7 +62,7 @@ RegisterNetEvent('QBCore:Client:SetDuty', function(onDuty)
     local gradeName = job.grade and job.grade.name or job.grade_label
     local gradeLevel = job.grade and job.grade.level or job.grade
 
-    TriggerEvent('fivem_Bridge:client:playerJobUpdate', job.name, job.label, gradeName, gradeLevel)
+    TriggerEvent('Fivem_Bridge:client:playerJobUpdate', job.name, job.label, gradeName, gradeLevel)
 end)
 
 local framework = {}

@@ -311,9 +311,9 @@
     },
 
     "system": {
-        "version_check_start": "^2[fivem_Bridge]^7 Tarkistetaan päivityksiä...",
-        "version_invalid_repo": "^1[fivem_Bridge] Virheellinen repositoriomuoto. Odotettu: \"username/reponame\"^7",
-        "version_not_found": "^1[fivem_Bridge] Kelvollista versiota ei löytynyt kohteelle \"{resource}\"^7",
+        "version_check_start": "^2[Fivem_Bridge]^7 Tarkistetaan päivityksiä...",
+        "version_invalid_repo": "^1[Fivem_Bridge] Virheellinen repositoriomuoto. Odotettu: \"username/reponame\"^7",
+        "version_not_found": "^1[Fivem_Bridge] Kelvollista versiota ei löytynyt kohteelle \"{resource}\"^7",
         "version_update_available": "^1Päivitys on saatavilla kohteelle {resource} (nykyinen versio: {version})\r\n - ^5Lataa uusin versio osoitteesta {url}^7",
         "version_patch_notes": "^3Korjausmerkinnät:^7",
         "version_entry": "^2Versio {version}:^7",
