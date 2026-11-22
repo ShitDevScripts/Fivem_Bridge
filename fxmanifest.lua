@@ -4,9 +4,9 @@ lua54 "yes"
 
 name "Fivem_Bridge"
 
-author "MrNewb"
+author "ShitDevScripts"
 description "Fivem_Bridge is a framework agnostic resource that provides a simple way to create bridges between your resources and other resources. It is designed to be easy to use and understand, while also being powerful enough to handle complex use cases."
-version "0.0.5"
+version "0.0.6"
 
 dependencies {
     "ox_lib",
