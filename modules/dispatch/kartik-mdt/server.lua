@@ -42,11 +42,6 @@ local function getCoords(src, coords)
 end
 
 function dispatch.sendAlert(src, jobs, coords, data, blip, alertFlash)
-    if GetResourceState("kartik-mdt") ~= "started" then
-        print("^1[Fivem_Bridge] kartik-mdt is not started. Dispatch alert skipped.^0")
-        return false
-    end
-
     coords = getCoords(src, coords)
 
     TriggerEvent("kartik-mdt:server:sendDispatchNotification", {

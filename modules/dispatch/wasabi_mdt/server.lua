@@ -1,10 +1,6 @@
 local dispatch = {}
 
 function dispatch.sendAlert(src, jobs, coords, data, blip, alertFlash)
-    if GetResourceState('wasabi_mdt') ~= 'started' then
-        return false
-    end
-
     local dispatchType = data and (data['type'] or data.code or 'disturbance') or 'disturbance'
     local dispatchTitle = data and (data['title'] or data.code or 'Dispatch') or 'Dispatch'
     local dispatchDescription = data and (data['description'] or '') or ''
