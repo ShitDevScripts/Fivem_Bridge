@@ -1,14 +1,6 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('doors_creator') == 'missing' then return end
+local doorlock = {}
 
-Doorlock = Doorlock or {}
-
-
----This will toggle the lock status of the door.
----@param doorID string
----@param toggle boolean
----@return boolean
-Doorlock.ToggleDoorLock = function(doorID, toggle)
+function doorlock.ToggleDoorLock(doorID, toggle)
     local state = toggle
     if state then
         exports["doors_creator"]:setDoorState(doorID, 1)
@@ -18,10 +10,8 @@ Doorlock.ToggleDoorLock = function(doorID, toggle)
     return true
 end
 
----This will get the name of the in use resource.
----@return string
-Doorlock.GetResourceName = function()
+function doorlock.GetResourceName()
     return 'doors_creator'
 end
 
-return Doorlock
+return doorlock

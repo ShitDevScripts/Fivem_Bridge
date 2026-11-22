@@ -1,320 +1,231 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('qb-inventory') == 'missing' then return end
-if GetResourceState('ox_inventory') ~= 'missing' then return end
-if GetResourceState('codem-inventory') ~= 'missing' then return end
-if GetResourceState('origen_inventory') ~= 'missing' then return end
-local qbInventory = exports['qb-inventory']
+local inventory = {}
 
-Inventory = Inventory or {}
-Inventory.Stashes = Inventory.Stashes or {}
-Inventory.Old = {}
-Inventory.Version = nil
-Inventory.ShopData = {}
+local qbi = exports['qb-inventory']
+local QBCore = exports['qb-core']:GetCoreObject()
 
-local function getInventoryNewVersion()
-    if tonumber(string.sub(GetResourceMetadata("qb-inventory", "version", 0), 1, 1)) >= 2 then
-        Inventory.Version = true
-        return
-    end
-    Inventory.Version = false
-end
-
-AddEventHandler('onResourceStart', function(resourceName)
-    if resourceName ~= "community_bridge" then return end
-    getInventoryNewVersion()
+AddEventHandler('QBCore:Server:UpdateObject', function()
+    QBCore = exports['qb-core']:GetCoreObject()
 end)
 
----@description This will get the name of the in use resource.
----@return string
-Inventory.GetResourceName = function()
-    return "qb-inventory"
+local function isPlayer(inv)
+    return type(inv) == 'number'
 end
 
----@description This will add an item, and return true or false based on success
----@param src number
----@param item string
----@param count number
----@param slot number (optional)
----@param metadata table (optional)
----@return boolean
-Inventory.AddItem = function(src, item, count, slot, metadata)
-    if Inventory.Version then if not qbInventory:CanAddItem(src, item, count) then return false end end
-    local success = qbInventory:AddItem(src, item, count, slot, metadata, 'community_bridge')
-    if not success then return false end
-    TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[item], 'add', count)
-    TriggerClientEvent("community_bridge:client:inventory:updateInventory", src, {action = "add", item = item, count = count, slot = slot, metadata = metadata})
-    return success or false
-end
-
----@description This will remove an item, and return true or false based on success
----@param src number
----@param item string
----@param count number
----@param slot number (optional)
----@param metadata table (optional)
----@return boolean
-Inventory.RemoveItem = function(src, item, count, slot, metadata)
-    local success = qbInventory:RemoveItem(src, item, count, slot, 'community_bridge')
-    if not success then return false end
-    TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[item], 'remove', count)
-    TriggerClientEvent("community_bridge:client:inventory:updateInventory", src, {action = "remove", item = item, count = count, slot = slot, metadata = metadata})
-    return success or false
-end
-
----@description This will return a table with the item info, {name, label, stack, weight, description, image}
----@param item string
----@return table
-Inventory.GetItemInfo = function(item)
-    local itemData = Framework.Shared.Items[item]
-    if not itemData then return {} end
-    return {
-        name = itemData.name,
-        label = itemData.label,
-        stack = itemData.unique,
-        weight = itemData.weight,
-        description = itemData.description,
-        image = Inventory.GetImagePath(itemData.image or itemData.name)
-    }
-end
-
----@description This will return the entire items table from the inventory.
----@return table 
-Inventory.Items = function()
-    return Framework.Shared.Items
-end
-
----@description Returns the specified slot data as a table.
----@param src number
----@param slot number
----@return table {weight, name, metadata, slot, label, count}
-Inventory.GetItemBySlot = function(src, slot)
-    local slotData = qbInventory:GetItemBySlot(src, slot)
-    if not slotData then return {} end
-    return {
-        name = slotData.name,
-        label = slotData.name,
-        weight = slotData.weight,
-        slot = slotData.slot,
-        count = slotData.amount,
-        metadata = slotData.info,
-        stack = slotData.unique,
-        description = slotData.description
-    }
-end
-
----@description This will open the specified stash for the src passed.
----@param src number
----@param _type string "stash", "trunk", "glovebox"
----@param id string
----@return nil
-Inventory.OpenStash = function(src, _type, id)
-    _type = _type or "stash"
-
-    if not Inventory.Version then return Inventory.Old.OpenStash(src, _type, id) end
-    return qbInventory:OpenInventory(src, id)
-end
-
----@description This will add items to a stash, and return true or false based on success
----@param id string
----@param items table {item, count, metadata}
----@return boolean
-Inventory.AddStashItems = function(id, items)
-    if type(items) ~= "table" then return false end
-    if not Inventory.Version then return Inventory.Old.AddStashItems(id, items) end
-    local success = false
-    for _, item in pairs(items) do
-        success = qbInventory:AddItem(id, item.item, item.count or item.amount, nil, item.metadata or item.info, "community_bridge, adding items to stash")
-    end
-    return success
-end
-
----@description This will add items to a trunk, and return true or false based on success
----@param identifier string
----@param items table
----@return boolean
-Inventory.AddTrunkItems = function(identifier, items)
-    if type(items) ~= "table" then return false end
-    local fullTrunkId = "trunk-"..identifier
-    if not Inventory.Version then return Inventory.Old.AddTrunkItems(fullTrunkId, items) end
-    if not qbInventory:GetInventory(fullTrunkId) then
-        qbInventory:CreateInventory(fullTrunkId, {label = fullTrunkId, slots = 15, maxweight = 10000})
-    end
-    Wait(1000)
-    for i = 1, #items do
-        qbInventory:AddItem(fullTrunkId, items[i].name, items[i].amount or items[i].count, items[i].slot or nil, items[i].info or items[i].metadata or {}, "community_bridge, adding items to trunk")
-    end
-    return true
-end
-
----@description This will clear the specified inventory, will always return true unless a value isnt passed correctly.
----@param id string
----@return boolean
-Inventory.ClearStash = function(id, _type)
-    if type(id) ~= "string" then return false end
-    if Inventory.Stashes[id] then Inventory.Stashes[id] = nil end
-    if not Inventory.Version then return Inventory.Old.ClearStash(id, _type) end
-    if _type == "trunk" then
-        id = "trunk-"..id
-    elseif _type == "glovebox" then
-        id = "glovebox-"..id
-    end
-    local inv = qbInventory:GetInventory(id)
-    if not inv then return true end
-    qbInventory:ClearStash(id)
-    return true
-end
-
----@description This will return a boolean if the player has the item.
----@param src number
----@param item string
----@param requiredCount number (optional)
----@return boolean
-Inventory.HasItem = function(src, item, requiredCount)
-    return qbInventory:HasItem(src, item, requiredCount or 1)
-end
-
----@description This is to get if there is available space in the inventory, will return boolean.
----@param src number
----@param item string
----@param count number
----@return boolean
-Inventory.CanCarryItem = function(src, item, count)
-    if not Inventory.Version then return Inventory.Old.CanCarryItem(src, item, count) end
-    return qbInventory:CanAddItem(src, item, count)
-end
-
----@description This will get the image path for an item, it is an alternate option to GetItemInfo. If a image isnt found will revert to community_bridge logo (useful for menus)
----@param item string
----@return string
-Inventory.GetImagePath = function(item)
-    item = Inventory.StripPNG(item)
-    local file = LoadResourceFile("qb-inventory", string.format("html/images/%s.png", item))
-    local imagePath = file and string.format("nui://qb-inventory/html/images/%s.png", item)
-    return imagePath or "https://avatars.githubusercontent.com/u/47620135"
-end
-
----@description This will update the plate to the vehicle inside the inventory. (It will also update with jg-mechanic if using it)
----@param oldplate string
----@param newplate string
----@return boolean
-Inventory.UpdatePlate = function(oldplate, newplate)
-    if not Inventory.Version then return Inventory.Old.UpdatePlate(oldplate, newplate) end
-    local gloveboxInv = qbInventory:GetInventory('glovebox-'..oldplate) or {slots = 5, maxweight = 10000, items = {}}
-    local storedGloveBox = Bridge.Tables.DeepClone(gloveboxInv, nil, nil)
-    local trunkInv = qbInventory:GetInventory('trunk-'..oldplate) or {slots = 5, maxweight = 10000, items = {}}
-    local storedTrunk = Bridge.Tables.DeepClone(trunkInv, nil, nil)
-    qbInventory:ClearStash('glovebox-'..oldplate)
-    qbInventory:ClearStash('trunk-'..oldplate)
-    qbInventory:CreateInventory('glovebox-'..newplate, {label = 'glovebox-'..newplate, slots = storedGloveBox.slots, maxweight = storedGloveBox.maxweight})
-    qbInventory:SetInventory('glovebox-'..newplate, storedGloveBox.items, "Community Bridge Moving Items In GloveBox")
-    qbInventory:CreateInventory('trunk-'..newplate, {label = 'trunk-'..newplate, slots = storedTrunk.slots, maxweight = storedTrunk.maxweight})
-    qbInventory:SetInventory('trunk-'..newplate, storedTrunk.items, "Community Bridge Moving Items In Trunk")
-    if GetResourceState('jg-mechanic') == 'missing' then return true end
-    return true, exports["jg-mechanic"]:vehiclePlateUpdated(oldplate, newplate)
-end
-
----@description This will open the specified shop for the src passed.
----@param src number
----@param shopTitle string
-Inventory.OpenShop = function(src, shopTitle)
-    if not Inventory.Version then return Inventory.Old.OpenShop(src, shopTitle) end
-    return qbInventory:OpenShop(src, shopTitle)
-end
-
----@description This will register a shop, if it already exists it will return true.
----@param shopTitle string
----@param inventory table
----@param shopCoords table
----@param shopGroups table
-Inventory.RegisterShop = function(shopTitle, inventory, shopCoords, shopGroups)
-    if not shopTitle or not inventory then return end
-    if Inventory.ShopData[shopTitle] then return true end
-    if not Inventory.Version then return Inventory.Old.RegisterShop(shopTitle, inventory, shopCoords, shopGroups) end
-    local repackedShopItems = {}
-    for _, v in pairs(inventory) do
-        table.insert(repackedShopItems, {name = v.name, price = v.price, amount = v.count or v.amount or 1000})
-    end
-    Inventory.ShopData[shopTitle] = { inventory = repackedShopItems, coords = shopCoords, groups = shopGroups }
-    qbInventory:CreateShop({ name = shopTitle, label = shopTitle, coords = shopCoords, items = repackedShopItems, })
-end
-
----@description This will open a players inventory, used for admin purposes and stuff.
----@param src number
----@param target number
-Inventory.OpenPlayerInventory = function(src, target)
-    assert(src, "OpenPlayerInventory: src is required")
-    assert(target, "OpenPlayerInventory: target is required")
-    exports['qb-inventory']:OpenInventory(src, target)
-end
-
-Inventory.Old.OpenShop = function(src, shopTitle)
-    local shopData = Inventory.ShopData[shopTitle]
-    if not shopData then return false end
-    TriggerClientEvent("inventory:client:OpenInventory", src, "shop", shopTitle, shopData)
-end
-
-Inventory.Old.RegisterShop = function(shopTitle, inventory, shopCoords, shopGroups)
-    local shopData = { label = shopTitle, items = {}, slots = 0 }
-
-    for _, v in pairs(inventory) do
-        table.insert(shopData.items, { name = v.name, price = v.price, amount = v.count or v.amount or 1000, info = v.metadata or v.info or {}, type = 'item' })
+local function countItems(inv, item, metadata)
+    if isPlayer(inv) and not metadata then
+        return qbi:GetItemCount(inv, item) or 0
     end
 
-    shopData.slots = #shopData.items
-    Inventory.ShopData[shopTitle] = shopData
-    print("QB-INVENTORY: You are using an outdated version of qb-inventory, please update to the latest version. Stuff will still work but you are using litterally the most exploitable inventory in fivem.")
-end
+    if not isPlayer(inv) and not metadata then
+        local stash = qbi:GetInventory(inv)
+        if not stash or not stash.items then return 0 end
 
-Inventory.Old.UpdatePlate = function(oldplate, newplate)
-    local queries = {
-        'UPDATE inventory_glovebox SET plate = @newplate WHERE plate = @oldplate',
-        'UPDATE inventory_trunk SET plate = @newplate WHERE plate = @oldplate',
-    }
-    local values = { newplate = newplate, oldplate = oldplate }
-    MySQL.transaction.await(queries, values)
-    if GetResourceState('jg-mechanic') == 'missing' then return true end
-    return true, exports["jg-mechanic"]:vehiclePlateUpdated(oldplate, newplate)
-end
+        local total = 0
 
-Inventory.Old.OpenStash = function(src, _type, id)
-    local tbl = Inventory.Stashes[id]
-    TriggerClientEvent('community_bridge:client:qb-inventory:openStash', src, id, { weight = tbl.weight or 5000, slots = tbl.slots or 20})
-end
+        for _, itemData in pairs(stash.items) do
+            if itemData.name == item then
+                total = total + (itemData.amount or 0)
+            end
+        end
 
-Inventory.Old.AddTrunkItems = function(fullTrunkId, items)
-    TriggerEvent("inventory:server:addTrunkItems", fullTrunkId, items)
-    return true
-end
+        return total
+    end
 
-Inventory.Old.AddStashItems = function(id, items)
-    return false, print("AddStashItems is not supported with qb-inventory v1")
-end
+    local items
 
-Inventory.Old.ClearStash = function(id, _type)
-    return false, print("ClearStash is not supported with qb-inventory v1")
-end
+    if isPlayer(inv) then
+        items = qbi:GetItemsByName(inv, item) or {}
+    else
+        local stash = qbi:GetInventory(inv)
+        items = stash and stash.items or {}
+    end
 
-Inventory.Old.CanCarryItem = function(src, item, count)
-    local oldQbInventoryConfig = Require('config.lua', 'qb-inventory')
-    local maxInvWeight = oldQbInventoryConfig.MaxWeight or 100000
-    local maxInvSlots = oldQbInventoryConfig.MaxSlots or 30
-    local packedWeight = 0
-    local addedSlots = 1
-    local stackCheck = Inventory.GetItemInfo(item).stack
-    local playerInv = Framework.GetPlayerInventory(src)
-    if not playerInv then return false end
-    for k, v in pairs(playerInv) do
-        if v.name then
-            local weight = Inventory.GetItemInfo(v.name).weight or 0
-            count = count + v.count
-            packedWeight = packedWeight + (weight * v.count)
+    local total = 0
+
+    for _, itemData in pairs(items) do
+        if itemData.name == item and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+            total = total + InventoryItemAmount(itemData)
         end
     end
-    local slotsUsed = #playerInv
-    if not stackCheck then addedSlots = count end
-    if slotsUsed + addedSlots > maxInvSlots then return false end
-    if packedWeight + (Inventory.GetItemInfo(item).weight or 0) * count > maxInvWeight then return false end
+
+    return total
+end
+
+local function resolveRemoveSlot(inv, item, metadata, slot)
+    if slot or not metadata then return slot end
+
+    local items
+
+    if isPlayer(inv) then
+        items = qbi:GetItemsByName(inv, item) or {}
+    else
+        local stash = qbi:GetInventory(inv)
+        items = stash and stash.items or {}
+    end
+
+    for _, itemData in pairs(items) do
+        if itemData.name == item and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+            return itemData.slot
+        end
+    end
+
+    return nil
+end
+
+function inventory.Items(itemName)
+    if itemName then
+        return NormalizeItemDefinitions(QBCore.Shared.Items[itemName], itemName)
+    end
+
+    return NormalizeItemDefinitions(QBCore.Shared.Items)
+end
+
+function inventory.getImagePath(itemName)
+    return InventoryBuildImageUrl(itemName, inventory.Items(itemName), 'qb-inventory', 'html/images')
+end
+
+function inventory.getItemInfo(itemName)
+    return InventoryBuildItemInfo(itemName, inventory.Items(itemName), 'qb-inventory', 'html/images')
+end
+
+function inventory.addItem(inv, item, count, metadata, slot)
+    local added = qbi:AddItem(inv, item, count or 1, slot or false, metadata or false, 'fivem_Bridge')
+    if added and tonumber(inv) then
+        TriggerClientEvent('qb-inventory:client:ItemBox', inv, QBCore.Shared.Items[item], 'add')
+    end
+    return added
+end
+
+function inventory.removeItem(inv, item, count, metadata, slot)
+    slot = resolveRemoveSlot(inv, item, metadata, slot)
+    local removed = qbi:RemoveItem(inv, item, count or 1, slot or false, 'fivem_Bridge')
+    if removed and tonumber(inv) then
+        TriggerClientEvent('qb-inventory:client:ItemBox', inv, QBCore.Shared.Items[item], 'remove')
+    end
+    return removed
+end
+
+function inventory.hasItem(inv, item, count, metadata)
+    if isPlayer(inv) and not metadata then
+        return qbi:HasItem(inv, item, count or 1)
+    end
+
+    return countItems(inv, item, metadata) >= (count or 1)
+end
+
+function inventory.getItemCount(inv, item, metadata)
+    return countItems(inv, item, metadata)
+end
+
+function inventory.getInventoryItems(inv)
+    if isPlayer(inv) then
+        local player = QBCore.Functions.GetPlayer(inv)
+        return NormalizeInventoryItems(player and player.PlayerData.items or {})
+    end
+
+    local stash = qbi:GetInventory(inv)
+    return NormalizeInventoryItems(stash and stash.items or {})
+end
+
+function inventory.setMetadata(inv, slot, metadata)
+    if not isPlayer(inv) then return false end
+
+    local slotItem = qbi:GetItemBySlot(inv, slot)
+    if not slotItem or not slotItem.name then return false end
+
+    return qbi:SetItemData(inv, slotItem.name, 'info', metadata, slot)
+end
+
+function inventory.getSlot(inv, slot)
+    if isPlayer(inv) then
+        return NormalizeInventoryItem(qbi:GetItemBySlot(inv, slot), slot)
+    end
+
+    local stash = qbi:GetInventory(inv)
+    if not stash or not stash.items then return nil end
+
+    return NormalizeInventoryItem(stash.items[tonumber(slot)], slot)
+end
+
+function inventory.clearInventory(inv, keep)
+    if isPlayer(inv) then
+        qbi:ClearInventory(inv, keep)
+        return
+    end
+
+    qbi:ClearStash(inv)
+end
+
+function inventory.canCarryItem(inv, item, count, metadata)
+    return qbi:CanAddItem(inv, item, count or 1)
+end
+
+function inventory.registerStash(id, label, slots, maxWeight, owner, groups, coords)
+    qbi:CreateInventory(id, {
+        label = label,
+        slots = slots,
+        maxweight = maxWeight,
+    })
     return true
 end
 
-return Inventory
+function inventory.openStash(src, id)
+    if type(src) ~= 'number' or type(id) ~= 'string' or id == '' then return false end
+
+    qbi:OpenInventory(src, id)
+    return true
+end
+
+local function mapShopItems(inventory)
+    if type(inventory) ~= 'table' then return {} end
+
+    local items = {}
+
+    for i = 1, #inventory do
+        local entry = inventory[i]
+        if type(entry) == 'table' and entry.name then
+            items[#items + 1] = {
+                name = entry.name,
+                price = entry.price,
+                amount = entry.count or 0,
+            }
+        end
+    end
+
+    return items
+end
+
+local function mapShopData(shopType, shopData)
+
+    return {
+        name = shopType,
+        label = inventory.label or inventory.name or shopType,
+        items = mapShopItems(inventory.inventory),
+    }
+end
+
+function inventory.registerShop(shopType, shopData)
+    if type(shopType) ~= 'string' or shopType == '' then return false end
+
+    qbi:CreateShop(mapShopData(shopType, shopData))
+    return true
+end
+
+function inventory.openShop(src, shopType)
+    if type(src) ~= 'number' or type(shopType) ~= 'string' or shopType == '' then return false end
+
+    qbi:OpenShop(src, shopType)
+    return true
+end
+
+function inventory.registerHook(eventName, callback, options)
+    lib.print.debug(('[bridge-inventory] Warning: qb-inventory has no ox-style hook API, cannot register hook for event "%s".'):format(eventName))
+    return false
+end
+
+function inventory.removeHooks(hookId)
+    lib.print.debug(('[bridge-inventory] Warning: qb-inventory has no ox-style hook API, cannot remove hook with id "%s".'):format(hookId))
+    return false
+end
+
+return inventory

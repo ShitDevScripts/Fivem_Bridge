@@ -1,207 +1,196 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('tgiann-inventory') == 'missing' then return end
+local inventory = {}
 
-local tgiann = exports["tgiann-inventory"]
+local tgi = exports['tgiann-inventory']
 
-Inventory = Inventory or {}
-
----@description This will get the name of the in use resource.
----@return string
-Inventory.GetResourceName = function()
-    return "tgiann-inventory"
+local function isStash(inv)
+    return type(inv) ~= 'number'
 end
 
----@description This will add an item, and return true or false based on success
----@param src number
----@param item string
----@param count number
----@param slot number (optional)
----@param metadata table (optional)
----@return boolean
-Inventory.AddItem = function(src, item, count, slot, metadata)
-    if not tgiann:CanCarryItem(src, item, count) then return false end
-    local success = tgiann:AddItem(src, item, count, slot, metadata, false)
-    if not success then return false end
-    TriggerClientEvent("community_bridge:client:inventory:updateInventory", src, {action = "add", item = item, count = count, slot = slot, metadata = metadata})
-    return success or false
+function inventory.Items(itemName)
+    return NormalizeItemDefinitions(tgi:Items(itemName), itemName)
 end
 
----@description This will remove an item, and return true or false based on success
----@param src number
----@param item string
----@param count number
----@param slot number (optional)
----@param metadata table (optional)
----@return boolean
-Inventory.RemoveItem = function(src, item, count, slot, metadata)
-    local success = tgiann:RemoveItem(src, item, count, slot, metadata)
-    if not success then return false end
-    TriggerClientEvent("community_bridge:client:inventory:updateInventory", src, {action = "remove", item = item, count = count, slot = slot, metadata = metadata})
-    return success or false
+function inventory.getImagePath(itemName)
+    return InventoryBuildImageUrl(itemName, inventory.Items(itemName), 'tgiann-inventory', 'inventory_images/images')
 end
 
----@description This will return a table with the item info, {name, label, stack, weight, description, image}
----@param item string
----@return table
-Inventory.GetItemInfo = function(item)
-    local itemData = tgiann:GetItemList()
-    if not itemData[item] then return {} end
-    return {
-        name = itemData.name or "Missing Name",
-        label = itemData.label or "Missing Label",
-        stack = itemData.unique or "false",
-        weight = itemData.weight or "0",
-        description = itemData.description or "none",
-        image = itemData.image or Inventory.GetImagePath(item),
-    }
+function inventory.getItemInfo(itemName)
+    return InventoryBuildItemInfo(itemName, inventory.Items(itemName), 'tgiann-inventory', 'inventory_images/images')
 end
 
----@description This will return the entire items table from the inventory.
----@return table 
-Inventory.Items = function()
-    return tgiann:GetItemList()
+function inventory.addItem(inv, item, count, metadata, slot)
+    count = count or 1
+
+    if isStash(inv) then
+        return tgi:AddItemToSecondaryInventory('stash', inv, item, count, slot, metadata)
+    end
+
+    return tgi:AddItem(inv, item, count, slot, metadata)
 end
 
----@description This will return the count of the item in the players inventory, if not found will return 0.
----@param src number
----@param item string
----@param metadata table (optional)
----@return number
-Inventory.GetItemCount = function(src, item, metadata)
-    local _item = tgiann:GetItemByName(src, item, metadata)
-    return _item.amount or 0
+function inventory.removeItem(inv, item, count, metadata, slot)
+    count = count or 1
+
+    if isStash(inv) then
+        return tgi:RemoveItemFromSecondaryInventory('stash', inv, item, count, slot, metadata)
+    end
+
+    return tgi:RemoveItem(inv, item, count, slot, metadata)
 end
 
----@description This will return the players inventory.
----@param src number
----@return table
-Inventory.GetPlayerInventory = function(src)
-    local inventory = tgiann:GetPlayerItems(src)
+function inventory.getItemCount(inv, item, metadata)
+    if isStash(inv) then
+        local stashItem = tgi:GetItemByNameFromSecondaryInventory('stash', inv, item, metadata)
+        if not stashItem then return 0 end
+
+        return stashItem.amount or stashItem.count or 0
+    end
+
+    if metadata then
+        return tgi:GetItem(inv, item, metadata, true) or 0
+    end
+
+    return tgi:GetItemCount(inv, item) or 0
+end
+
+function inventory.hasItem(inv, item, count, metadata)
+    count = count or 1
+
+    if isStash(inv) or metadata then
+        return inventory.getItemCount(inv, item, metadata) >= count
+    end
+
+    return tgi:HasItem(inv, item, count)
+end
+
+function inventory.getInventoryItems(inv)
+    if isStash(inv) then
+        return NormalizeInventoryItems(tgi:GetSecondaryInventoryItems('stash', inv) or {})
+    end
+
+    return NormalizeInventoryItems(tgi:GetPlayerItems(inv) or {})
+end
+
+function inventory.setMetadata(inv, slot, metadata)
+    if isStash(inv) then return false end
+
+    local slotItem = tgi:GetItemBySlot(inv, slot)
+    if not slotItem or not slotItem.name then return false end
+
+    tgi:UpdateItemMetadata(inv, slotItem.name, slot, metadata)
+    return true
+end
+
+function inventory.getSlot(inv, slot)
+    if isStash(inv) then
+        local items = tgi:GetSecondaryInventoryItems('stash', inv) or {}
+
+        for _, value in pairs(items) do
+            if value.slot == slot then
+                return NormalizeInventoryItem(value, slot)
+            end
+        end
+
+        return nil
+    end
+
+    return NormalizeInventoryItem(tgi:GetItemBySlot(inv, slot), slot)
+end
+
+function inventory.clearInventory(inv, keep)
+    if isStash(inv) then
+        if not keep then
+            tgi:DeleteInventory('stash', inv)
+            return true
+        end
+
+        local keepSet = {}
+
+        if type(keep) == 'string' then
+            keepSet[keep] = true
+        elseif type(keep) == 'table' then
+            for i = 1, #keep do
+                keepSet[keep[i]] = true
+            end
+        end
+
+        local items = tgi:GetSecondaryInventoryItems('stash', inv) or {}
+
+        for _, itemData in pairs(items) do
+            if itemData.name and not keepSet[itemData.name] then
+                tgi:RemoveItemFromSecondaryInventory('stash', inv, itemData.name, itemData.amount or itemData.count or 0, itemData.slot)
+            end
+        end
+
+        return true
+    end
+
+    return tgi:ClearInventory(inv, keep)
+end
+
+function inventory.canCarryItem(inv, item, count, metadata)
+    if isStash(inv) then return true end
+
+    return tgi:CanCarryItem(inv, item, count or 1)
+end
+
+function inventory.registerStash(id, label, slots, maxWeight, owner, groups, coords)
+    return tgi:RegisterStash(id, label, slots, maxWeight, owner, groups, coords)
+end
+
+function inventory.openStash(src, id)
+    if type(src) ~= 'number' or type(id) ~= 'string' or id == '' then return false end
+
+    tgi:ForceOpenInventory(src, 'stash', id)
+    return true
+end
+
+local function mapShopItems(inventory)
+    if type(inventory) ~= 'table' then return {} end
+
     local items = {}
-    for _, v in pairs(inventory) do
-        if tonumber(_) then
-            table.insert(items, {name = v.name, label = v.name, weight = 0, description = v.description, slot = v.slot, count = v.amount, metadata = v.info})
+
+    for i = 1, #inventory do
+        local entry = inventory[i]
+        if type(entry) == 'table' and entry.name then
+            items[#items + 1] = {
+                name = entry.name,
+                price = entry.price,
+                amount = entry.count or 0,
+                type = 'item',
+            }
         end
     end
+
     return items
 end
 
----@description Returns the specified slot data as a table.
----@param src number
----@param slot number
----@return table {weight, name, metadata, slot, label, count}
-Inventory.GetItemBySlot = function(src, slot)
-    local item = tgiann:GetItemBySlot(src, slot)
-    if not item then return {} end
-    return {
-        name = item.name,
-        label = item.label,
-        weight = item.weight,
-        slot = slot,
-        count = item.amount or item.count,
-        metadata = item.info or item.metadata or {},
-        stack = item.unique or item.stack or false,
-        description = item.description
-    }
+function inventory.registerShop(shopType, shopData)
+    if type(shopType) ~= 'string' or shopType == '' then return false end
+
+    tgi:RegisterShop(shopType, mapShopItems(inventory.inventory))
+    return true
 end
 
----@description This will set the metadata of an item in the inventory.
----@param src number
----@param item string
----@param slot number
----@param metadata table
----@return nil
-Inventory.SetMetadata = function(src, item, slot, metadata)
-    tgiann:UpdateItemMetadata(src, item, slot, metadata)
+function inventory.openShop(src, shopType)
+    if type(src) ~= 'number' or type(shopType) ~= 'string' or shopType == '' then return false end
+
+    tgi:OpenShop(src, shopType)
+    return true
 end
 
----@description This will open the specified stash for the src passed.
----@param src number
----@param _type string
----@param id number||string
----@return nil
-Inventory.OpenStash = function(src, _type, id)
-    _type = _type or "stash"
-    local tbl = Inventory.Stashes[id] or {weight = 1000000, slot = 50, label = "Stash"}
-    return tgiann:ForceOpenInventory(src, _type, id, tbl and { maxWeight = tbl.weight , slots = tbl.slot, label = tbl.label})
+function inventory.registerHook(eventName, callback, options)
+    local registerHook = tgi.RegisterHook or tgi.registerHook
+    if not registerHook then return false end
+
+    return registerHook(tgi, eventName, WrapInventoryHookCallback(eventName, callback), options)
 end
 
----@description This will return a boolean if the player has the item.
----@param src number
----@param item string
----@param requiredCount number (optional)
----@return boolean
-Inventory.HasItem = function(src, item, requiredCount)
-    return tgiann:HasItem(src, item, requiredCount or 1)
-end
-
----@description This is to get if there is available space in the inventory, will return boolean.
----@param src number
----@param item string
----@param count number
----@return boolean
-Inventory.CanCarryItem = function(src, item, count)
-    return tgiann:CanCarryItem(src, item, count)
-end
-
----@description This will update the plate to the vehicle inside the inventory. (It will also update with jg-mechanic if using it)
----@param oldplate string
----@param newplate string
----@return boolean
-Inventory.UpdatePlate = function(oldplate, newplate)
-    local queries = {
-        'UPDATE tgiann_inventory_trunkitems SET plate = @newplate WHERE plate = @oldplate',
-        'UPDATE tgiann_inventory_gloveboxitems SET plate = @newplate WHERE plate = @oldplate',
-    }
-    local values = { newplate = newplate, oldplate = oldplate }
-    MySQL.transaction.await(queries, values)
-    tgiann:UpdateVehicle(oldplate, newplate)
-    if GetResourceState('jg-mechanic') == 'missing' then return true end
-    return true, exports["jg-mechanic"]:vehiclePlateUpdated(oldplate, newplate)
-end
-
----@description This will add items to a trunk, and return true or false based on success
----@param identifier string
----@param items table
----@return boolean
-Inventory.AddTrunkItems = function(identifier, items)
-    local id = "trunk"..identifier
-    if type(items) ~= "table" then return false end
-    for _, v in pairs(items) do
-        tgiann:AddItemToSecondaryInventory("trunk", identifier, v.item, v.count, nil, v.metadata)
+function inventory.removeHooks(hookId)
+    local removeHooks = tgi.RemoveHooks or tgi.removeHooks
+    if removeHooks then
+        return removeHooks(tgi, hookId)
     end
-    return true
 end
 
----@description This will clear the specified inventory, will always return true unless a value isnt passed correctly.
----@param id string
----@return boolean
-Inventory.ClearStash = function(id, _type)
-    if type(id) ~= "string" then return false end
-    tgiann:DeleteInventory(_type, id)
-    if Inventory.Stashes[id] then Inventory.Stashes[id] = nil end
-    return true
-end
-
----@description This will get the image path for this item, if not found will return placeholder.
----@param item string
----@return string
-Inventory.GetImagePath = function(item)
-    local pngItem = Inventory.StripPNG(item)
-    local webpItem = Inventory.StripWebp(item)
-    local pngPath = LoadResourceFile("inventory_images", string.format("/images/%s.png", pngItem))
-    local webpPath = LoadResourceFile("inventory_images", string.format("/images/%s.webp", webpItem))
-    local imagePath = pngPath and string.format("nui://inventory_images/images/%s.png", pngItem) or webpPath and string.format("nui://inventory_images/images/%s.webp", webpItem)
-    return imagePath or "https://avatars.githubusercontent.com/u/47620135"
-end
-
----@description This will open a players inventory, used for admin purposes and stuff.
----@param src number
----@param target number
-Inventory.OpenPlayerInventory = function(src, target)
-    assert(src, "OpenPlayerInventory: src is required")
-    assert(target, "OpenPlayerInventory: target is required")
-    tgiann:OpenInventoryById(src, target)
-end
-
-return Inventory
+return inventory

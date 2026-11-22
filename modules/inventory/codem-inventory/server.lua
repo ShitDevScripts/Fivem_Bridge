@@ -1,192 +1,303 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('codem-inventory') == 'missing' then return end
-
-Inventory = Inventory or {}
-Inventory.Stashes = Inventory.Stashes or {}
+local inventory = {}
 
 local codem = exports['codem-inventory']
 
----@description This will get the name of the in use resource.
----@return string
-Inventory.GetResourceName = function()
-    return "codem-inventory"
+local function isPlayer(inv)
+    return type(inv) == 'number'
 end
 
----@description This will add an item, and return true or false based on success
----@param src number
----@param item string
----@param count number
----@param slot number (optional)
----@param metadata table (optional)
----@return boolean
-Inventory.AddItem = function(src, item, count, slot, metadata)
-    local success = codem:AddItem(src, item, count, slot, metadata)
-    if not success then return false end
-    TriggerClientEvent("community_bridge:client:inventory:updateInventory", src, {action = "add", item = item, count = count, slot = slot, metadata = metadata})
-    return success
+local function getStashItems(stashId)
+    return codem:GetStashItems(stashId) or {}
 end
 
----@description Internal function to search for items with specific metadata in player inventory
----@param src number
----@param metadata table
----@return boolean, number|nil
-local function runMetadataSearch(src, metadata)
-    local inv = Framework.GetPlayerInventory(src) or {}
-    for _, v in pairs(inv) do
-        if v.metadata and v.metadata == metadata then
-            return true, v.slot
+local function getPlayerItems(inv)
+    local data = codem:GetInventory(nil, inv)
+
+    if type(data) ~= 'table' then return {} end
+
+    return data.items or data
+end
+
+local function countItems(inv, item, metadata)
+    if isPlayer(inv) and not metadata then
+        return codem:GetItemsTotalAmount(inv, item) or 0
+    end
+
+    local items
+
+    if isPlayer(inv) then
+        items = codem:GetItemsByName(inv, item) or {}
+    else
+        items = getStashItems(inv)
+    end
+
+    local total = 0
+
+    for _, itemData in pairs(items) do
+        if itemData.name == item and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+            total = total + (itemData.amount or itemData.count or 0)
         end
     end
+
+    return total
+end
+
+local function findStashSlot(items)
+    local used = {}
+    local maxSlot = 0
+
+    for slot in pairs(items) do
+        local slotNum = tonumber(slot) or slot
+        used[slotNum] = true
+
+        if slotNum > maxSlot then
+            maxSlot = slotNum
+        end
+    end
+
+    for i = 1, maxSlot do
+        if not used[i] then return i end
+    end
+
+    return maxSlot + 1
+end
+
+local function resolveRemoveSlot(inv, item, metadata, slot)
+    if slot or not metadata then return slot end
+
+    local items
+
+    if isPlayer(inv) then
+        items = codem:GetItemsByName(inv, item) or {}
+    else
+        items = getStashItems(inv)
+    end
+
+    for _, itemData in pairs(items) do
+        if itemData.name == item and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+            return itemData.slot
+        end
+    end
+
+    return nil
+end
+
+function inventory.Items(itemName)
+    local list = codem:GetItemList()
+    return NormalizeItemDefinitions(list, itemName)
+end
+
+function inventory.getImagePath(itemName)
+    return InventoryBuildImageUrl(itemName, inventory.Items(itemName), 'codem-inventory', 'html/images')
+end
+
+function inventory.getItemInfo(itemName)
+    return InventoryBuildItemInfo(itemName, inventory.Items(itemName), 'codem-inventory', 'html/images')
+end
+
+function inventory.addItem(inv, item, count, metadata, slot)
+    count = count or 1
+
+    if isPlayer(inv) then
+        if slot or metadata then
+            return codem:AddItem(inv, item, count, slot, metadata)
+        end
+
+        return codem:AddItem(inv, item, count)
+    end
+
+    local items = getStashItems(inv)
+
+    if slot then
+        items[slot] = {
+            name = item,
+            amount = count,
+            info = metadata or {},
+            slot = slot,
+        }
+    else
+        local stacked = false
+
+        for _, itemData in pairs(items) do
+            if itemData.name == item and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+                itemData.amount = (itemData.amount or 0) + count
+                stacked = true
+                break
+            end
+        end
+
+        if not stacked then
+            local newSlot = findStashSlot(items)
+
+            items[newSlot] = {
+                name = item,
+                amount = count,
+                info = metadata or {},
+                slot = newSlot,
+            }
+        end
+    end
+
+    codem:UpdateStash(inv, items)
+    return true
+end
+
+function inventory.removeItem(inv, item, count, metadata, slot)
+    count = count or 1
+
+    if isPlayer(inv) then
+        slot = resolveRemoveSlot(inv, item, metadata, slot)
+
+        if slot then
+            return codem:RemoveItem(inv, item, count, slot)
+        end
+
+        return codem:RemoveItem(inv, item, count)
+    end
+
+    local items = getStashItems(inv)
+    local remaining = count
+
+    for key, itemData in pairs(items) do
+        if remaining <= 0 then break end
+
+        local matchesSlot = not slot or itemData.slot == slot or key == slot or tonumber(key) == slot
+
+        if itemData.name == item and matchesSlot and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+            local amount = itemData.amount or 0
+
+            if amount <= remaining then
+                remaining = remaining - amount
+                items[key] = nil
+            else
+                itemData.amount = amount - remaining
+                remaining = 0
+            end
+        end
+    end
+
+    codem:UpdateStash(inv, items)
+end
+
+function inventory.hasItem(inv, item, count, metadata)
+    if isPlayer(inv) and not metadata then
+        return codem:CheckItemValid(inv, item, count or 1)
+    end
+
+    return countItems(inv, item, metadata) >= (count or 1)
+end
+
+function inventory.getItemCount(inv, item, metadata)
+    return countItems(inv, item, metadata)
+end
+
+function inventory.getInventoryItems(inv)
+    if isPlayer(inv) then
+        return NormalizeInventoryItems(getPlayerItems(inv))
+    end
+
+    return NormalizeInventoryItems(getStashItems(inv))
+end
+
+function inventory.setMetadata(inv, slot, metadata)
+    if not isPlayer(inv) then return false end
+
+    local slotItem = codem:GetItemBySlot(inv, slot)
+    if not slotItem or not slotItem.name then return false end
+
+    codem:SetItemMetadata(inv, slot, metadata)
+    return true
+end
+
+function inventory.getSlot(inv, slot)
+    if isPlayer(inv) then
+        return NormalizeInventoryItem(codem:GetItemBySlot(inv, slot), slot)
+    end
+
+    local items = getStashItems(inv)
+
+    return NormalizeInventoryItem(items[slot] or items[tostring(slot)], slot)
+end
+
+function inventory.clearInventory(inv, keep)
+    local keepSet
+
+    if type(keep) == 'string' then
+        keepSet = { [keep] = true }
+    elseif type(keep) == 'table' then
+        for i = 1, #keep do
+            keepSet[keep[i]] = true
+        end
+    end
+
+    if isPlayer(inv) then
+        if not keepSet then
+            return codem:ClearInventory(inv)
+        end
+
+        local items = getPlayerItems(inv)
+        for _, itemData in pairs(items) do
+            if itemData.name and not keepSet[itemData.name] then
+                local slot = itemData.slot
+                local amount = itemData.amount or itemData.count or 1
+                if slot then
+                    codem:RemoveItem(inv, itemData.name, amount, slot)
+                else
+                    codem:RemoveItem(inv, itemData.name, amount)
+                end
+            end
+        end
+        return true
+    end
+
+    if not keepSet then
+        codem:UpdateStash(inv, {})
+        return true
+    end
+
+    local items = getStashItems(inv)
+    local kept = {}
+    for slotId, itemData in pairs(items) do
+        if itemData.name and keepSet[itemData.name] then
+            kept[slotId] = itemData
+        end
+    end
+    codem:UpdateStash(inv, kept)
+    return true
+end
+
+function inventory.canCarryItem(inv, item, count, metadata)
+    return true
+end
+
+function inventory.registerStash(id, label, slots, maxWeight, owner, groups, coords)
+    lib.print.debug(('[bridge-inventory] Warning: codem-inventory has no server-side stash registration, cannot register stash "%s".'):format(id))
+    return true
+end
+
+function inventory.openStash(src, id)
+    lib.print.debug(('[bridge-inventory] Warning: codem-inventory has no server-side stash open export, cannot open stash "%s" for player %s.'):format(id, src))
     return false
 end
 
----This will remove an item, and return true or false based on success
----@param src number
----@param item string
----@param count number
----@param slot number
----@param metadata table
----@return boolean
-Inventory.RemoveItem = function(src, item, count, slot, metadata)
-    if metadata then
-        local found, foundSlot = runMetadataSearch(src, metadata)
-        if found then slot = foundSlot end
-    end
-    local success = codem:RemoveItem(src, item, count, slot)
-    if not success then return false end
-    TriggerClientEvent("community_bridge:client:inventory:updateInventory", src, {action = "remove", item = item, count = count, slot = slot, metadata = metadata})
-    return success
+function inventory.registerShop(shopType, shopData)
+    lib.print.debug(('[bridge-inventory] Warning: codem-inventory has no server-side shop registration, cannot register shop "%s".'):format(shopType))
+    return false
 end
 
----@description This will return a table with the item info, {name, label, stack, weight, description, image}
----@param item string
----@return table
-Inventory.GetItemInfo = function(item)
-    local itemData = Inventory.Items()
-    if not itemData or not itemData[item] then return {} end
-    return {
-        name = itemData[item].name or "Missing Name",
-        label = itemData[item].label or "Missing Label",
-        stack = itemData[item].unique or "false",
-        weight = itemData[item].weight or "0",
-        description = itemData[item].description or "none",
-        image = itemData[item].image or Inventory.GetImagePath(item),
-    }
+function inventory.openShop(src, shopType)
+    lib.print.debug(('[bridge-inventory] Warning: codem-inventory has no server-side shop open export, cannot open shop "%s" for player %s.'):format(shopType, src))
+    return false
 end
 
----@description This will return the entire items table from the inventory.
----@return table 
-Inventory.Items = function()
-    return codem:GetItemList() or {}
+function inventory.registerHook(eventName, callback, options)
+    lib.print.debug(('[bridge-inventory] Warning: codem-inventory has no hook API, cannot register hook for event "%s".'):format(eventName))
+    return false
 end
 
----@description This will return the count of the item in the players inventory, if not found will return 0.
----@param src number
----@param item string
----@param metadata table (optional)
----@return number
-Inventory.GetItemCount = function(src, item, metadata)
-    return codem:GetItemsTotalAmount(src, item) or 0
+function inventory.removeHooks(hookId)
+    lib.print.debug(('[bridge-inventory] Warning: codem-inventory has no hook API, cannot remove hook with id "%s".'):format(hookId))
+    return nil
 end
 
----@description This wil return the players inventory.
----@param src number
----@return table
-Inventory.GetPlayerInventory = function(src)
-    local identifier = Framework.GetPlayerIdentifier(src)
-    local playerItems = codem:GetInventory(identifier, src)
-    local repackedTable = {}
-    for _, v in pairs(playerItems) do
-        table.insert(repackedTable, {
-            name = v.name,
-            count = v.amount or v.count,
-            metadata = v.info or v.metadata or {},
-            slot = v.slot,
-        })
-    end
-    return repackedTable
-end
-
----@description Returns the specified slot data as a table.
----@param src number
----@param slot number
----@return table {weight, name, metadata, slot, label, count}
-Inventory.GetItemBySlot = function(src, slot)
-    local slotData = codem:GetItemBySlot(src, slot)
-    if not slotData then return {} end
-    return {
-        name = slotData.name,
-        label = slotData.label or slotData.name,
-        weight = slotData.weight,
-        slot = slotData.slot,
-        count = slotData.amount or slotData.count,
-        metadata = slotData.info or slotData.metadata or {},
-        stack = slotData.unique or false,
-        description = slotData.description
-    }
-end
-
----@description This will set the metadata of an item in the inventory.
----@param src number
----@param item string
----@param slot number
----@param metadata table
----@return nil
-Inventory.SetMetadata = function(src, item, slot, metadata)
-    return codem:SetItemMetadata(src, slot, metadata)
-end
-
----@description This will return a boolean if the player has the item.
----@param src number
----@param item string
----@param requiredCount number (optional)
----@return boolean
-Inventory.HasItem = function(src, item, requiredCount)
-    return codem:HasItem(src, item, requiredCount or 1)
-end
-
----@description This will clear the specified inventory, will always return true unless a value isnt passed correctly.
----@param id string
----@param _type string unused with ox_inventory
----@return boolean
-Inventory.ClearStash = function(id, _type)
-    if type(id) ~= "string" then return false end
-    if Inventory.Stashes[id] then Inventory.Stashes[id] = nil end
-    codem:UpdateStash(id, {})
-    return true
-end
-
----@description This will add items to a stash, and return true or false based on success
----@param id string
----@param items table {item, count, metadata}
----@return boolean
-Inventory.AddStashItems = function(id, items)
-    if type(items) ~= "table" then return false end
-    local repack = {}
-    for _, v in pairs(items) do
-        table.insert(repack, {
-            item = v.item,
-            amount = v.count or v.amount,
-            info = v.metadata or v.info or {},
-            unique = v.unique or v.stack or false,
-            description = v.description or "none",
-            weight = Inventory.GetItemInfo(v.item).weight or 0,
-            type = 'item',
-            slot = #repack + 1,
-        })
-    end
-    codem:UpdateStash(id, repack)
-    return true
-end
-
----@description This will get the image path for an item, it is an alternate option to GetItemInfo. If a image isnt found will revert to community_bridge logo (useful for menus)
----@param item string
----@return string
-Inventory.GetImagePath = function(item)
-    item = Inventory.StripPNG(item)
-    local file = LoadResourceFile("codem-inventory", string.format("html/itemimages/%s.png", item))
-    local imagePath = file and string.format("nui://codem-inventory/html/itemimages/%s.png", item)
-    return imagePath or "https://avatars.githubusercontent.com/u/47620135"
-end
-
-return Inventory
+return inventory

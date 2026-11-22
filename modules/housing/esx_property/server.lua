@@ -1,21 +1,17 @@
-if GetResourceState('esx_property') == 'missing' then return end
-
-Housing = Housing or {}
+local housing = {}
 
 RegisterNetEvent('esx_property:enter', function(insideId)
     local src = source
-    TriggerEvent('community_bridge:Server:_OnPlayerInside', src, insideId)
+    TriggerEvent('fivem_Bridge:Server:_OnPlayerInside', src, insideId)
 end)
 
 RegisterNetEvent('esx_property:leave', function(insideId)
     local src = source
-    TriggerEvent('community_bridge:Server:_OnPlayerInside', src, insideId)
+    TriggerEvent('fivem_Bridge:Server:_OnPlayerInside', src, insideId)
 end)
 
----This will get the name of the in use resource.
----@return string
-Housing.GetResourceName = function()
+function housing.GetResourceName()
     return "esx_property"
 end
 
-return Housing
+return housing

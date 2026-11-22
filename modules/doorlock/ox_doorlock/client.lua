@@ -1,20 +1,13 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('ox_doorlock') == 'missing' then return end
+local doorlock = {}
 
-Doorlock = Doorlock or {}
-
----This will get the closest door to the ped
----@return string | nil
-Doorlock.GetClosestDoor = function()
+function doorlock.GetClosestDoor()
     local doorData = exports.ox_doorlock:getClosestDoor()
     if not doorData then return end
     return tostring(doorData.id) or nil
 end
 
----This will get the name of the in use resource.
----@return string
-Doorlock.GetResourceName = function()
+function doorlock.GetResourceName()
     return 'ox_doorlock'
 end
 
-return Doorlock
+return doorlock

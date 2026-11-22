@@ -1,12 +1,8 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('tk_bosstablet') ~= 'started' then return end
+local bossmenu = {}
 
-BossMenu = BossMenu or {}
+RegisterNetEvent('fivem_Bridge:client:openBossMenu:tk', function(jobName, jobType)
+    if source ~= 65535 then return end
+    exports.tk_bosstablet:openBossMenu()
+end)
 
----This will get the name of the module being used.
----@return string
-BossMenu.GetResourceName = function()
-    return "tk_bosstablet"
-end
-
-return BossMenu
+return bossmenu

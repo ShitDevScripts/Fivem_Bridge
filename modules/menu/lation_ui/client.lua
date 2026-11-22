@@ -1,96 +1,88 @@
-local resourceName = "lation_ui"
-local configValue = BridgeClientConfig.MenuSystem
-if (configValue == "auto" and GetResourceState(resourceName) ~= "started") or (configValue ~= "auto" and configValue ~= resourceName) then return end
-Menus = Menus or {}
+local menu = {}
 
-local function runCheckForImageIcon(icon)
-    local iconStr = tostring(icon):lower()
-    if iconStr:match("^https?://") or iconStr:match("^nui://") or iconStr:match("^file://") then
-        return true
+local lation = exports.lation_ui
+
+local function copyOption(option, title)
+    local item = {}
+
+    for key, value in pairs(option) do
+        item[key] = value
     end
 
-    local extensions = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp", ".ico"}
-    for _, ext in pairs(extensions) do
-        if iconStr:match(ext .. "$") then
-            return true
-        end
+    if title and not item.title then
+        item.title = title
     end
 
-    return false
+    return item
 end
 
----Converts a QB menu to an Lation menu.
----@param id string The menu ID.
----@param menu table The QB menu data.
----@return table The Lation menu data.
-local function QBToLationMenu(id, menu)
-    local lationMenu = {
-        id = id,
-        title = "",
-        canClose = true,
-        options = {},
-    }
-    for i, v in pairs(menu) do
-        if v.isMenuHeader then
-            if lationMenu.title == "" then
-                lationMenu.title = v.header
+local function normalizeOptions(options)
+    if not options then return {} end
+
+    if options[1] ~= nil then
+        local list = {}
+
+        for index, option in ipairs(options) do
+            if type(option) == 'table' then
+                list[index] = copyOption(option)
+            else
+                list[index] = { title = tostring(option) }
             end
+        end
+
+        return list
+    end
+
+    local list = {}
+
+    for key, option in pairs(options) do
+        if type(option) == 'table' then
+            list[#list + 1] = copyOption(option, type(key) == 'string' and key or nil)
         else
-            local option = {
-                title = v.header,
-                description = v.txt,
-                icon = v.icon,
-                args = v.params.args,
-                onSelect = function(selected, secondary, args)
-                    local params = menu[id]?.options?[selected]?.params
-                    if not params then return end
-                    local event = params.event
-                    local isServer = params.isServer
-                    if not event then return end
-                    if isServer then
-                        return TriggerServerEvent(event, args)
-                    end
-                    return TriggerEvent(event, args)
-                end
-
-            }
-            table.insert(lationMenu.options, option)
+            list[#list + 1] = { title = type(key) == 'string' and key or tostring(key) }
         end
     end
-    return lationMenu
+
+    return list
 end
 
-local function OxToLationMenu(data)
-    local repack = {
-        id = data.id,
-        title = data.title or "",
-        canClose = data.canClose ~= false,
-        options = {}
+local function toLationContext(context)
+    return {
+        id = context.id,
+        title = context.title,
+        subtitle = context.subtitle,
+        headerIcon = context.headerIcon or context.icon,
+        headerIconColor = context.headerIconColor or context.iconColor,
+        headerIconAnimation = context.headerIconAnimation or context.iconAnimation,
+        menu = context.menu,
+        canClose = context.canClose,
+        position = context.position,
+        onExit = context.onExit,
+        onBack = context.onBack,
+        options = normalizeOptions(context.options),
     }
-    -- Handle icon colors: remove for image icons, convert strings to hex for others
-    for k, v in pairs(data.options) do
-        if v.iconColor then
-            if v.icon and runCheckForImageIcon(v.icon) then
-                v.iconColor = nil
-            end
-        end
-        table.insert(repack.options, v)
+end
+
+function menu.openMenu(data)
+    local contexts = data[1] and data or { data }
+    local openId
+
+    for _, context in ipairs(contexts) do
+        local menuData = toLationContext(context)
+
+        lation:registerMenu(menuData)
+        openId = openId or menuData.id
     end
 
-    return repack
-end
-
-function OpenMenu(id, data, useQBinput)
-    if useQBinput then
-        data = QBToLationMenu(id, data)
-    else
-        data = OxToLationMenu(data)
+    if openId then
+        lation:showMenu(openId)
     end
-    exports.lation_ui:registerMenu(data)
-    exports.lation_ui:showMenu(id)
-    return data
+
+    return openId
 end
 
-function GetMenuResourceName()
-    return resourceName
+function menu.closeMenu()
+    lation:hideMenu()
 end
+
+return menu

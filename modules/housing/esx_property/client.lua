@@ -1,11 +1,7 @@
-if GetResourceState('esx_property') == 'missing' then return end
+local housing = {}
 
-Housing = Housing or {}
-
----This will get the name of the in use resource.
----@return string
-Housing.GetResourceName = function()
+function housing.GetResourceName()
     return "esx_property"
 end
 
-return Housing
+return housing

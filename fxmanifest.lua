@@ -1,85 +1,120 @@
-fx_version 'cerulean'
-game 'gta5'
-lua54 'yes'
-use_experimental_fxv2_oal 'yes'
-author 'The Order of the Sacred Framework'
-name 'community_bridge'
-description 'A Universal Bridge for Our Community, created by a group of contributors with a shared vision to enhance both user and developer experiences. This bridge connects various frameworks, inventories, target systems, notification systems, and more, fostering compatibility and seamless integration.'
-version '0.13.6'
+fx_version "cerulean"
+game "gta5"
+lua54 "yes"
+
+name "fivem_Bridge"
+
+author "MrNewb"
+description "fivem_Bridge is a framework agnostic resource that provides a simple way to create bridges between your resources and other resources. It is designed to be easy to use and understand, while also being powerful enough to handle complex use cases."
+version "0.0.5"
+
+dependencies {
+    "ox_lib",
+}
 
 shared_scripts {
-    '@ox_lib/init.lua',
-    'settings/sharedConfig.lua',
-    'lib/init.lua',
-    'modules/locales/*.lua',
-    'modules/clothing/**/shared.lua',
+    "@ox_lib/init.lua",
+    "config/bridge_resources.lua",
+    "config/theme.lua",
+    "config/auto_detect.lua",
+    "utility/shared/shims.lua",
+    "import.lua",
+    "utility/shared/locale.lua",
+}
+
+ui_page "web/build/index.html"
+
+client_scripts {
+    "utility/client/interaction_points.lua",
+    "utility/client/interactions.lua",
+    "utility/client/gizmo.lua",
+    "utility/client/keybinds.lua",
+    "utility/client/placer.lua",
+    "utility/client/dialogue.lua",
+    "utility/client/zone_creator.lua",
+    "utility/client/dui_surface.lua",
+    "utility/client/task_groups.lua",
+    "utility/client/task_hud.lua",
 }
 
 server_scripts {
-    '@oxmysql/lib/MySQL.lua',
-    'settings/serverConfig.lua',
-    'modules/locales/shared.lua',
-    'modules/version/server/*.lua',
-    'modules/framework/**/server.lua',
-    'modules/inventory/**/server.lua',
-    'modules/doorlock/**/server.lua',
-    'modules/phone/**/server.lua',
-    'modules/banking/**/server.lua',
-    'modules/dispatch/**/server.lua',
-    'modules/clothing/**/server.lua',
-    'modules/shops/**/server.lua',
-    'modules/helptext/**/server.lua',
-    'modules/notify/**/server.lua',
-    'modules/housing/**/server.lua',
-    'modules/skills/**/server.lua',
-    'modules/bossmenu/**/server.lua',
-    "lib/**/server.lua",
-    'init.lua',
+    "@oxmysql/lib/MySQL.lua",
+    "utility/server/interactions.lua",
+    "utility/server/task_groups.lua",
+    "utility/server/version.lua",
 }
-
-client_scripts {
-    'settings/clientConfig.lua',
-    'modules/locales/shared.lua',
-    'modules/framework/**/client.lua',
-    'modules/inventory/**/client.lua',
-    'modules/doorlock/**/client.lua',
-    'modules/phone/**/client.lua',
-    'modules/weather/**/client.lua',
-    'modules/vehiclekey/**/client.lua',
-    'modules/fuel/**/client.lua',
-    'modules/target/**/client.lua',
-    'modules/dispatch/**/client.lua',
-    'modules/progressbar/**/client.lua',
-    'modules/clothing/**/client.lua',
-    'modules/input/**/client.lua',
-    'modules/menu/**/client.lua',
-    'modules/helptext/**/client.lua',
-    'modules/notify/**/client.lua',
-    'modules/dialogue/**/client/*.lua',
-    'modules/shops/**/client.lua',
-    'modules/housing/**/client.lua',
-    'modules/skills/**/client.lua',
-    'modules/bossmenu/**/client.lua',
-    'modules/zones/**/client.lua',
-    'init.lua',
-}
-
-ui_page 'web/dist/index.html'
 
 files {
-    'web/dist/index.html',
-    'web/dist/assets/*.css',
-    'web/dist/assets/*.js',
-    'locales/*.json',
-    'lib/**/**/*.lua',
-    'lib/**/**/**/*.lua',
-    'modules/**',
-    'settings/*.lua',
-    'lib/init.lua',
+    "import.lua",
+    "modules/**/client.lua",
+    "modules/**/server.lua",
+    "modules/**/shared.lua",
+    "modules/framework/*.lua",
+    "locales/*.json",
+    "types/**/*.lua",
+    "utility/client/*.lua",
+    "web/build/**",
 }
 
-dependencies {
-    '/server:6116',
-    '/onesync',
-    'ox_lib',
+exports {
+    "BridgeEnvironment",
+    "Framework",
+    "Inventory",
+    "Banking",
+    "Locale",
+    "Locales",
+    "GetTheme",
+    "GetThemeCss",
+    "Dialogue",
+    "PropPlacer",
+    "useGizmo",
+    "GetBoundKey",
+    "RegisterCommand",
+    "RegisterKeybind",
+    "AddInteraction",
+    "AddInteractionsBatch",
+    "CancelInteractionBatch",
+    "BeginInteractionBulk",
+    "CommitInteractionBulk",
+    "RemoveInteraction",
+    "UpdateInteraction",
+    "RemoveAllInteractions",
+    "GetClosestInteraction",
+    "GetNearbyInteractions",
+    "GetInteractionByEntity",
+    "VersionCheck",
+    "CreateZone",
+    "CreateDuiPlacement",
+    "CreateLaserTargetPlacement",
+    "RegisterDuiSurface",
+    "UpdateDuiSurface",
+    "UnregisterDuiSurface",
+    "ClearDuiSurfaces",
+    "HasDuiPlacement",
+    "GetDuiBoardCenter",
+    "GetDuiTargetRadius",
+    "ApplyPropDuiTexture",
+    "UpdatePropDuiTexture",
+    "ClearPropDuiTexture",
+    "HasPropDuiTexture",
+    "CreateTaskGroup",
+    "AddToTaskGroup",
+    "RemoveFromTaskGroup",
+    "ClearTaskGroup",
+    "DeleteTaskGroup",
+    "IsInTaskGroup",
+    "IsTaskGroupLeader",
+    "GetTaskGroupLeader",
+    "SetTaskGroupLeader",
+    "GetTaskGroupMembers",
+    "GetPlayerTaskGroups",
+    "GetTaskGroupMemberCount",
+    "GetLocalTaskGroups",
+    "TaskGroups",
+    "OpenTaskGroupMenu",
+    "CloseTaskGroupMenu",
+    "IsTaskGroupMenuOpen",
+    "Notify",
+    "Task",
+    "CompleteTask",
 }

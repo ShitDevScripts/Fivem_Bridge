@@ -1,105 +1,92 @@
-# Community Bridge
+# Fivem_Bridge
 
-Community Bridge is a modular and extensible compatibility layer for FiveM, designed to unify development across major roleplay frameworks. It provides a consistent API that simplifies integration between popular frameworks such as QBCore, ESX, QBox, and custom solutions.
+A framework-agnostic bridge for FiveM. One API for frameworks, inventories, targets, notifications, banking, dispatch, menus, vehicle keys/fuel, task groups and more.
 
-By bridging core game systems including inventory, dispatch, targeting, door locks, vehicle keys, clothing, fuel, and more, Community Bridge reduces duplicated effort and streamlines script compatibility across servers.
+This build is adapted from **Newb_Bridge** by **MrNewb** and from **community_bridge** by The Order of the Sacred Framework. It has been renamed, reorganised and tweaked for this server, but a lot of the original work is still underneath — see the credits below.
 
----
+## Credits — big thanks
 
-![](https://img.shields.io/github/contributors/TheOrderFivem/community_bridge?logo=github)
-![](https://img.shields.io/github/v/release/TheOrderFivem/community_bridge?logo=github)
+Huge thanks to **MrNewb** and everyone behind **Newb_Bridge**. The module system, the provider adapters and the utility code saved a ton of work and gave this bridge its shape.
 
+Also huge thanks to **The Order of the Sacred Framework** and the contributors to **community_bridge**. The extra provider adapters (clothing, doorlock, housing, phone, skills, weather, zones and more) came from there. Community Bridge category names were mapped to this bridge's names (`fuel` → `vehiclefuel`, `input` → `inputs`, `notify` → `notifications`, `vehiclekey` → `vehiclekeys`, `helptext` → `textui`, `_default` → `internal`) and its `community_bridge:` events were renamed to `fivem_Bridge:`.
 
-## Features
+Thanks also to the teams behind **ox_lib**, **oxmysql** and everyone else listed in [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
 
-### Framework Compatibility
+The upstream Lua code is licensed **GPL-3.0**. Those notices are kept on purpose: [LICENSE](LICENSE) holds the full licence text and [ATTRIBUTIONS.md](ATTRIBUTIONS.md) lists the original authors. If you share this resource with other people, keep those files with it.
 
-* Supports QBCore, ESX, QBox, and custom roleplay frameworks
-* Provides a unified API to standardize resource interaction
+## What is in here
 
-### Inventory Systems
+```
+fivem_Bridge/
+├── config/            provider selection and debug/version settings
+│   ├── bridge_resources.lua
+│   └── auto_detect.lua
+├── locales/           32 translation files (en.json is the fallback)
+├── modules/           provider adapters (311 Lua files)
+│   ├── banking/       bossmenu/     clothing/     dialogue/
+│   ├── dispatch/      doorlock/     framework/    housing/
+│   ├── inputs/        inventory/    menu/         notifications/
+│   ├── phone/         progressbar/  shops/        skills/
+│   ├── target/        textui/       vehiclefuel/  vehiclekeys/
+│   ├── version/       weather/      zones/
+├── utility/           shared helpers, client tools and server helpers
+├── types/             Lua type annotations
+├── import.lua         consumer-side lazy loader
+├── fxmanifest.lua
+├── ATTRIBUTIONS.md
+├── LICENSE
+└── README.md
+```
 
-* Compatible with ox\_inventory, qb-inventory, ps-inventory, codem-inventory, core\_inventory, and others
+**No `web/` folder in this build**, as requested. There is no `ui_page` and no NUI assets.
 
-### Dispatch and MDT
+### About the UI-backed utilities
 
-* Integrates with ps-dispatch, cd\_dispatch, lb-tablet, bub\_mdt, and other dispatch systems
-* Includes fallback mechanisms to ensure notifications are delivered
+All upstream utilities are present. The ones that drew NUI (`dialogue`, `gizmo`, `placer`, `zone_creator`, `task_hud`, `task_groups` menu) are still loaded, so their non-UI APIs keep working, but nothing will be drawn without a NUI page. `dui_surface.lua` detects the missing `web/build/dui_surface.html` and registers safe no-op exports instead of creating broken DUI browsers. If you add a compatible web UI later, those features light up again.
 
-### Targeting Systems
+## Install
 
-* Works with qb-target, ox\_target, sleepless-interact, and similar targeting resources
+1. Put this folder in your `resources/` directory as `fivem_Bridge` (the name is hardcoded in `import.lua`, so keep the folder name as-is).
+2. Make sure `ox_lib` and `oxmysql` are installed and started first.
+3. Add to `server.cfg`:
 
-### Doorlock and Security
+```cfg
+ensure ox_lib
+ensure oxmysql
+ensure fivem_Bridge
+```
 
-* Supports ox\_doorlock, qb-doorlock, rcore\_doorlock, jacksams-doorlock, and other door lock systems
+4. Set `ox:locale` if you want a language other than English: `setr ox:locale en`.
+5. Edit `config/bridge_resources.lua`. Everything defaults to `"auto"` except `Config.Banking`, which is pinned to `ShitDevScripts-Banking` (inherited from the source build). Set `Config.Debug = true` to see the startup banner and module warnings.
 
-### Vehicle Keys and Locking
+Other resources can use the bridge by adding this to their `fxmanifest.lua`:
 
-* Compatible with all major vehicle key management systems
+```lua
+shared_scripts {
+    '@fivem_Bridge/import.lua',
+}
+```
 
-### Fuel Systems
+then:
 
-* Supports all major fuel resources such as legacyfuel, ps-fuel, and more
+```lua
+local player = bridge.framework.GetPlayer(source)
+bridge.notify({ message = 'Hello from fivem_Bridge', type = 'success' })
+```
 
-### Clothing and Appearance
+## What changed from the upstream build
 
-* Integrates with illenium-appearance, fivem-appearance, qb-clothing, esx\_skin, and default fallback clothing systems
+- Resource renamed to `fivem_Bridge`; events, console prefixes, locale brand and export host lookup now use that name.
+- `Config` lives in `config/` (`bridge_resources.lua`, `theme.lua`, `auto_detect.lua`); paths match `fxmanifest.lua` and `import.lua`.
+- Resource name is hardcoded as `fivem_Bridge` in `import.lua`; no config value or convar controls it.
+- Added a debug startup banner showing context, module count and host resource.
+- Web/NUI assets removed; DUI utilities degrade safely when the page is missing.
+- Theme module, `config/theme.lua` and the `GetTheme`/`GetThemeCss` exports removed (no UI to theme).
+- Version bumped to `1.0.0`, manifest description and comments rewritten.
+- Added every missing module from community_bridge in this bridge's `modules/<category>/<provider>/{client,server,shared}.lua` layout, including new config keys (`Clothing`, `Doorlock`, `Housing`, `Phone`, `Shops`, `Skills`, `Weather`, `Zones`) and provider lists in `config/auto_detect.lua`.
+- `utility/shared/community_compat.lua` provides `Require` / `Callback` helpers for the adapted community modules. They load from the installed `community_bridge` resource when available and fall back to no-ops otherwise.
+- Original credit/licence notices preserved in every utility file, `ATTRIBUTIONS.md` and `LICENSE`.
 
-### Additional Features
+## Licence
 
-* Progress bars, notifications, weather synchronization, and skill system integration
-* Developer tools including 3D interaction points, cutscene management, particle effects, scaleform UI, DUI system, and advanced object placement
-
----
-
-## Documentation
-
-Complete developer documentation is available at:
-[Community Bridge Documentation](https://theorderfivem.github.io/docs)
----
-
-## Community and Support
-
-Join the Community Bridge Discord server for support, discussion, and contributions:
-[Community Discord](https://discord.gg/MukwBuJjP7)
-
----
-
-## About Community Bridge
-
-community_bridge is developed by The Order of the Sacred Framework, a collaborative team focused on improving interoperability and reducing development friction in the FiveM ecosystem. The project is open source and licensed under GPLv3.
-
----
-
-## Why Choose Community Bridge?
-
-* Universal framework compatibility reduces code duplication
-* Modular design allows use of only needed components
-* Extensive developer utilities for advanced scripting and UI
-* Tested in production on hundreds of FiveM servers
-* Open source with active community support and regular updates
-
----
-
-## Frequently Asked Questions
-
-**Q: Will Community Bridge support new frameworks in the future?**
-A: Yes, the project actively tracks emerging frameworks and integrates support accordingly.
-
-**Q: Can Community Bridge work with my custom framework?**
-A: Community Bridge is designed to be extensible and supports integration with custom frameworks.
-
-**Q: How often is the project updated?**
-A: Updates are regularly released to improve compatibility, add features, and fix issues based on community feedback.
-
-**Q: Why is the seo so bad?**
-A: Straight up, I have no clue and have tried everything to improve it. If you have tips PLEASE let me know in the discord or pr some changes to the repos dev branch.
-
----
-
-## Keywords (for SEO)
-
-FiveM framework compatibility, FiveM bridge system, QBCore ESX bridge, FiveM universal inventory, dispatch integration, targeting system, door lock system, vehicle key management, fuel system bridge, clothing system FiveM, FiveM developer tools, roleplay framework integration, Lua scripting FiveM, open source FiveM bridge, cross-framework compatibility, modular FiveM resource
-
----
+GPL-3.0 work by MrNewb, The Order of the Sacred Framework and contributors. See [LICENSE](LICENSE), [ATTRIBUTIONS.md](ATTRIBUTIONS.md) and community_bridge's own `Attributions.md`/`LICENSE` in the source server. Provided without warranty.

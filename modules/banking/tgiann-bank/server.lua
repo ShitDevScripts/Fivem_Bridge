@@ -1,44 +1,24 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('tgiann-bank') == 'missing' then return end
-Banking = Banking or {}
+local banking = {}
+local Banking = exports['tgiann-bank']
 
-local tgiann = exports["tgiann-bank"]
-
----This will get the name of the Managment system being being used.
----@return string
-Banking.GetManagmentName = function()
-    return 'tgiann-bank'
+function banking.GetManagmentName()
+    return "tgiann-bank"
 end
 
----This will get the name of the in use resource.
----@return string
-Banking.GetResourceName = function()
-    return 'tgiann-bank'
+function banking.GetResourceName()
+    return "tgiann-bank"
 end
 
----This will return a number
----@param account string
----@return number
-Banking.GetAccountMoney = function(account)
-    return tgiann:GetJobAccountBalance(account)
+function banking.GetAccountMoney(account)
+    return Banking:GetJobAccountBalance(account)
 end
 
----This will add money to the specified account of the passed amount
----@param account string
----@param amount number
----@param _ string
----@return boolean
-Banking.AddAccountMoney = function(account, amount, _)
-    return tgiann:AddJobMoney(account, amount)
+function banking.AddAccountMoney(account, amount, reason)
+    return Banking:AddJobMoney(account, amount)
 end
 
----This will remove money from the specified account of the passed amount
----@param account string
----@param amount number
----@param _ string
----@return boolean
-Banking.RemoveAccountMoney = function(account, amount, _)
-    return tgiann:RemoveJobMoney(account, amount)
+function banking.RemoveAccountMoney(account, amount, reason)
+    return Banking:RemoveJobMoney(account, amount)
 end
 
-return Banking
+return banking

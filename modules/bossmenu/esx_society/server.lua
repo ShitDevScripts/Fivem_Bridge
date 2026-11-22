@@ -1,21 +1,7 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('esx_society') ~= 'started' then return end
+local bossmenu = {}
 
-BossMenu = BossMenu or {}
-
----This will get the name of the module being used.
----@return string
-BossMenu.GetResourceName = function()
-    return "esx_society"
+function bossmenu.openBossMenu(src, jobName, jobType)
+    TriggerClientEvent('fivem_Bridge:client:openBossMenu:esx', src, jobName, jobType)
 end
 
-local registeredSocieties = {}
-BossMenu.OpenBossMenu = function(src, jobName, jobType)
-    if not registeredSocieties[jobName] then
-        exports["esx_society"]:registerSociety(jobName, jobName, 'society_' .. jobName, 'society_' .. jobName, 'society_' .. jobName, {type = 'private'})
-        registeredSocieties[jobName] = true
-    end
-    TriggerClientEvent("community_bridge:client:OpenBossMenu", src, jobName, jobType)
-end
-
-return BossMenu
+return bossmenu

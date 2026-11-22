@@ -1,21 +1,17 @@
-if GetResourceState('ps-housing') == 'missing' then return end
-
-Housing = Housing or {}
+local housing = {}
 
 RegisterNetEvent('ps-housing:server:enterProperty', function(insideId)
     local src = source
-    TriggerEvent('community_bridge:Server:_OnPlayerInside', src, insideId)
+    TriggerEvent('fivem_Bridge:Server:_OnPlayerInside', src, insideId)
 end)
 
 RegisterNetEvent('ps-housing:server:leaveProperty', function(insideId)
     local src = source
-    TriggerEvent('community_bridge:Server:_OnPlayerInside', src, insideId)
+    TriggerEvent('fivem_Bridge:Server:_OnPlayerInside', src, insideId)
 end)
 
----This will get the name of the in use resource.
----@return string
-Housing.GetResourceName = function()
+function housing.GetResourceName()
     return "ps-housing"
 end
 
-return Housing
+return housing

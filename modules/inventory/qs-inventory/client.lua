@@ -1,83 +1,50 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('qs-inventory') == 'missing' then return end
-local quasar = exports["qs-inventory"]
+local inventory = {}
 
-Inventory = Inventory or {}
+local qsi = exports['qs-inventory']
 
----@description This will get the name of the in use resource.
----@return string
-Inventory.GetResourceName = function()
-    return "qs-inventory"
+local function getPlayerItems()
+    return qsi:getUserInventory() or {}
 end
 
----@description Return the item info in oxs format, {name, label, stack, weight, description, image}
----@param item string
----@return table
-Inventory.GetItemInfo = function(item)
-    local itemsData = quasar:GetItemList()
-    if not itemsData then return {} end
-    itemsData = itemsData[item]
-    if not itemsData then return {} end
-    return {
-        name = itemsData.name or "Missing Name",
-        label = itemsData.label or "Missing Label",
-        stack = itemsData.unique or "false",
-        weight = itemsData.weight or "0",
-        description = itemsData.description or "none",
-        image = Inventory.GetImagePath(item),
-    }
-end
-
----@description This will return the entire items table from the inventory.
----@return table 
-Inventory.Items = function()
-    return quasar:GetItemList()
-end
-
----@description Will return boolean if the player has the item.
----@param item string
----@return boolean
-Inventory.HasItem = function(item)
-    local check = quasar:Search(item)
-    return check and true or false
-end
-
----@description This will return th count of the item in the players inventory, if not found will return 0.
----@param item string
----@return number
-Inventory.GetItemCount = function(item)
-    local searchItem = quasar:Search(item)
-    return searchItem or 0
-end
-
----@description This will get the image path for this item, if not found will return placeholder.
----@param item string
----@return string
-Inventory.GetImagePath = function(item)
-    item = Inventory.StripPNG(item)
-    local file = LoadResourceFile("qs-inventory", string.format("html/images/%s.png", item))
-    local imagePath = file and string.format("nui://qs-inventory/html/images/%s.png", item)
-    return imagePath or "https://avatars.githubusercontent.com/u/47620135"
-end
-
----@description This will return the players inventory in the format of {name, label, count, slot, metadata}
----@return table
-Inventory.GetPlayerInventory = function()
-    local items = {}
-    local inventory = quasar:getUserInventory()
-    for _, v in pairs(inventory) do
-        table.insert(items, {
-            name = v.name,
-            label = v.label,
-            count = v.amount or v.count,
-            slot = v.slot,
-            metadata = v.info or v.metadata or {},
-            stack = v.unique or v.stack or false,
-            close = v.useable,
-            weight = v.weight
-        })
+local function countItem(item, metadata)
+    if not metadata then
+        return tonumber(qsi:Search(item)) or 0
     end
-    return items
+
+    local total = 0
+
+    for _, itemData in pairs(getPlayerItems()) do
+        if itemData.name == item and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+            total = total + InventoryItemAmount(itemData)
+        end
+    end
+
+    return total
 end
 
-return Inventory
+function inventory.Items(itemName)
+    local list = qsi:GetItemList()
+    return NormalizeItemDefinitions(list, itemName)
+end
+
+function inventory.hasItem(item, count, metadata)
+    return countItem(item, metadata) >= (count or 1)
+end
+
+function inventory.getImagePath(itemName)
+    return InventoryBuildImageUrl(itemName, inventory.Items(itemName), 'qs-inventory', 'html/images')
+end
+
+function inventory.getItemInfo(itemName)
+    return InventoryBuildItemInfo(itemName, inventory.Items(itemName), 'qs-inventory', 'html/images')
+end
+
+function inventory.getItemCount(item, metadata)
+    return countItem(item, metadata)
+end
+
+function inventory.getInventoryItems()
+    return NormalizeInventoryItems(getPlayerItems())
+end
+
+return inventory

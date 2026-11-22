@@ -1,111 +1,126 @@
----@diagnostic disable: duplicate-set-field
-local resourceName = "lation_ui"
-local configValue = BridgeClientConfig.ProgressBarSystem
-if (configValue == "auto" and GetResourceState(resourceName) ~= "started") or (configValue ~= "auto" and configValue ~= resourceName) then return end
+local progressbar = {}
 
-ProgressBar = ProgressBar or {}
+local lation = exports.lation_ui
 
----This function converts a QB progress bar options table to an lation progress bar options table.
----@param options table
----@return table
-local function convertFromQB(options)
-    if not options then return options end
-    local prop1 = options.prop or {}
-    local prop2 = options.propTwo or {}
-    local props = {
-        {
-            model = prop1?.model,
-            bone = prop1?.bone,
-            pos = prop1?.coords,
-            rot = prop1?.rotation,
-        },
-        {
-            model = prop2?.model,
-            bone = prop2?.bone,
-            pos = prop2?.coords,
-            rot = prop2?.rotation,
-        }
-    }
-    return {
-        duration = options.duration,
-        label = options.label,
-        description = options?.description,
-        icon = options?.icon,
-        iconColor = options?.iconColor,
-        iconAnimation = options?.iconAnimation,
-        useWhileDead = options.useWhileDead,
-        canCancel = options.canCancel,
-        disable = {
-            move = options.controlDisables?.disableMovement,
-            car = options.controlDisables?.disableCarMovement,
-            combat = options.controlDisables?.disableCombat,
-            mouse = options.controlDisables?.disableMouse
-        },
-        anim = {
-            dict = options.animation?.animDict,
-            clip = options.animation?.anim,
-            flag = options.animation?.flags or 49,
-        },
-        prop = props,
-    }
-end
+local function normalizeVector(vec)
+    if not vec then return nil end
 
----This function converts a ox progress bar options table to an lation progress bar options table.
----@param options table
----@return table
-local function convertFromOx(options)
-    if not options then return options end
-    local prop1 = options.prop or {}
-    local prop2 = options.propTwo or {}
-    return {
-        duration = options.duration,
-        label = options.label,
-        description = options?.description,
-        icon = options?.icon,
-        iconColor = options?.iconColor,
-        iconAnimation = options?.iconAnimation,
-        useWhileDead = options.useWhileDead,
-        canCancel = options.canCancel,
-        disable = options.disable,
-        anim = options.anim,
-        prop = {
-            {
-                model = prop1?.model,
-                bone = prop1?.bone,
-                pos = prop1?.coords,
-                rot = prop1?.rotation,
-            },
-            {
-                model = prop2?.model,
-                bone = prop2?.bone,
-                pos = prop2?.coords,
-                rot = prop2?.rotation,
-            }
-        },
-    }
-end
-
----This function opens a progress bar.
----@param options table
----@param cb any
----@param isQBInput boolean||optional
----@return boolean
-function ProgressBar.Open(options, cb, isQBInput)
-    if isQBInput then
-        options = convertFromQB(options)
-    else
-        options = convertFromOx(options)
+    if vec.x and vec.y and vec.z then
+        return { x = vec.x, y = vec.y, z = vec.z }
     end
 
-    local success = exports.lation_ui:progressBar(options)
+    if vec[1] then
+        return { x = vec[1], y = vec[2], z = vec[3] }
+    end
 
-    if cb then cb(success) end
-    return success
+    return vec
 end
 
+local function normalizeAnim(anim)
+    if not anim then return nil end
 
-ProgressBar.GetResourceName = function()
-    return "lation_ui"
+    if anim.scenario then
+        return {
+            scenario = anim.scenario,
+            playEnter = anim.playEnter,
+        }
+    end
+
+    if not anim.dict or not anim.clip then
+        return nil
+    end
+
+    return {
+        dict = anim.dict,
+        clip = anim.clip,
+        flag = anim.flag,
+        blendIn = anim.blendIn,
+        blendOut = anim.blendOut,
+        duration = anim.duration,
+        playbackRate = anim.playbackRate,
+        lockX = anim.lockX,
+        lockY = anim.lockY,
+        lockZ = anim.lockZ,
+    }
 end
 
-return ProgressBar
+local function normalizeProp(prop)
+    if not prop then return nil end
+
+    local item = prop[1] or prop
+    if not item.model then return nil end
+
+    return {
+        model = item.model,
+        bone = item.bone,
+        pos = normalizeVector(item.pos),
+        rot = normalizeVector(item.rot),
+        rotOrder = item.rotOrder,
+    }
+end
+
+local function normalizeDisable(disable)
+    if not disable then return nil end
+
+    return {
+        move = disable.move,
+        sprint = disable.sprint,
+        car = disable.car,
+        combat = disable.combat,
+        mouse = disable.mouse,
+    }
+end
+
+local function convertToLation(data)
+    local options = {
+        label = data.label,
+        description = data.description,
+        duration = data.duration,
+        icon = data.icon,
+        iconColor = data.iconColor,
+        iconAnimation = data.iconAnimation,
+        color = data.color,
+        steps = data.steps,
+        canCancel = data.canCancel,
+        useWhileDead = data.useWhileDead,
+        allowRagdoll = data.allowRagdoll,
+        allowCuffed = data.allowCuffed,
+        allowFalling = data.allowFalling,
+        allowSwimming = data.allowSwimming,
+    }
+
+    local anim = normalizeAnim(data.anim)
+    if anim then
+        options.anim = anim
+    end
+
+    local prop = normalizeProp(data.prop)
+    if prop then
+        options.prop = prop
+    end
+
+    local disable = normalizeDisable(data.disable)
+    if disable then
+        options.disable = disable
+    end
+
+    return options
+end
+
+function progressbar.openprogressbar(data)
+    if not data then return false end
+
+    return lation:progressBar(convertToLation(data))
+end
+
+function progressbar.progressActive()
+    return lation:progressActive()
+end
+
+function progressbar.cancelProgress()
+    lation:cancelProgress()
+end
+
+progressbar.openProgressBar = progressbar.openprogressbar
+
+return progressbar

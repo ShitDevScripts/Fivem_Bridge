@@ -1,631 +1,348 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('es_extended') ~= 'started' then return end
+local BridgePlayers = require '@fivem_Bridge/modules/framework/player_registry'
+local ServerHelpers = require '@fivem_Bridge/modules/framework/server_helpers'
 
-Prints = Prints or Require("lib/utility/shared/prints.lua")
-Callback = Callback or Require("lib/callback/shared/callback.lua")
+local ESX = exports.es_extended:getSharedObject()
+local framework = {}
 
-ESX = exports.es_extended:getSharedObject()
+local dutyCache = ServerHelpers.createDutyCache(function(job)
+    return job.onduty ~= false
+end)
 
-Framework = Framework or {}
-
-local cachedItemList = nil
-
---- @description This will return the name of the framework in use
---- @return string
-Framework.GetFrameworkName = function()
-    --print("This is deprecated, please use Framework.GetResourceName() instead.")
-    return Framework.GetResourceName()
-end
-
----@description This will get the name of the in use resource.
---- @return string
-Framework.GetResourceName = function()
-    return 'es_extended'
-end
-
----@description This is an internal function, its here to attempt to emulate qbs shared items mainly, do not use this outside of bridge.
-Framework.ItemList = function()
-    if cachedItemList then return cachedItemList end
-    local items = ESX.Items
-    local repackedTable = {}
-    for k, v in pairs(items) do
-        if v.label then
-            repackedTable[k] = {
-                name = k,
-                label = v.label,
-                weight = v.weight,
-                type = "item",
-                image = k .. ".png",
-                unique = false,
-                useable = true,
-                shouldClose = true,
-                description = 'No description provided.',
-            }
-        end
+local function syncBridgePlayer(src)
+    local player = ESX.GetPlayerFromId(src)
+    local data = BridgePlayers.buildEsxBridgePlayerData(player)
+    if data then
+        BridgePlayers.sync(src, data)
     end
-    cachedItemList = { Items = repackedTable or {} }
-    return cachedItemList
 end
 
----@description This will return if the player is an admin in the framework.
----@param src number
----@return boolean
-Framework.GetIsFrameworkAdmin = function(src)
-    if not src then return false end
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return false end
-    local group = xPlayer.getGroup()
-    if group == 'admin' or group == 'superadmin' then return true end
-    return false
+function framework.getIdentifier(src)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return nil end
+
+    return player.getIdentifier and player.getIdentifier() or player.identifier
 end
 
----@description Returns the player date of birth.
---- @param src number
---- @return string|nil
-Framework.GetPlayerDob = function(src)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return end
-    local dob = xPlayer.get("dateofbirth")
-    return dob
-end
+function framework.getSrcFromIdentifier(identifier)
+    local player = ESX.GetPlayerFromIdentifier(identifier)
+    if not player then return nil end
 
---- @description Returns the player data of the specified source in the framework defualt format
---- @param src any
---- @return table | nil
-Framework.GetPlayer = function(src)
-    local xPlayer = ESX.GetPlayerFromId(src)
-    if not xPlayer then return end
-    return xPlayer
-end
-
----@description Returns the player data of the specified identifier in the framework defualt format.
----@param citizenid string
----@return table | nil
-Framework.GetPlayerByIdentifier = function(citizenid)
-    local player = ESX.GetPlayerFromIdentifier(citizenid)
-    if not player then return end
-    return player
-end
-
----@description This will return the player source of the specified citizen ID.
----@param citizenid string
----@return number | nil
-Framework.GetPlayerSource = function(citizenid)
-    local player = Framework.GetPlayerByIdentifier(citizenid)
-    if not player then return end
     return player.source
 end
 
+function framework.getCharacterName(identifier)
+    local player = ESX.GetPlayerFromIdentifier(identifier)
+    if not player then return nil end
 
---- @description Returns the citizen ID of the player.
---- @param src number
---- @return string | nil returns the citizen ID of the player if it exists
-Framework.GetPlayerIdentifier = function(src)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return end
-    return xPlayer.getIdentifier()
-end
-
---- @description This will return the jobs registered in the framework in a table.
---- @return table in the format "{name = jobName, label = jobLabel, grade = {name = gradeName, level = gradeLevel}}"
-Framework.GetFrameworkJobs = function()
-    return ESX.GetJobs()
-end
-
---- @description This will return the first and last name of the player.
---- @return string|nil, string|nil returns the first and last name of the player
-Framework.GetPlayerName = function(src)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return end
-    return xPlayer.variables.firstName, xPlayer.variables.lastName
-end
-
----@description This will return a table of all logged in players
---- @return table
-Framework.GetPlayers = function()
-    local players = ESX.GetExtendedPlayers()
-    local playerList = {}
-    for _, xPlayer in pairs(players) do
-        table.insert(playerList, xPlayer.source)
+    local first = player.variables and player.variables.firstName
+    local last = player.variables and player.variables.lastName
+    if first and last then
+        return ("%s %s"):format(first, last), first, last
     end
-    return playerList
+
+    local name = player.name
+    if type(name) ~= 'string' then return nil end
+
+    local splitFirst, splitLast = name:match('^(%S+)%s+(.+)$')
+    return name, splitFirst or name, splitLast
 end
 
----@description Returns a table of items matching the specified name and if passed metadata from the player's inventory.
---- This is an internal function and should not be used outside of bridge, use the Inventory module instead when dealing with items.
---- @param src number
---- @param item string
---- @param metadata table
---- @return table {name, count, metadata, slot}
-Framework.GetItem = function(src, item, metadata)
-    print("ESX does not support item metadata searches, please ensure you are using a supported inventory system or that you have the correct start order.")
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return {} end
-    local playerItems = xPlayer.getInventory()
-    local repackedTable = {}
-    for _, v in pairs(playerItems) do
-        if v.name == item then
-            table.insert(repackedTable, {
-                name = v.name,
-                count = v.count,
-                metadata = {}, -- ESX does not support item metadata
-                slot = 0, -- ESX does not support item slots
-            })
+function framework.getFrameworkJobs()
+    return ESX.GetJobs() or {}
+end
+
+function framework.isAdmin(src)
+    local id = tonumber(src)
+    if not id then return false end
+
+    local player = ESX.GetPlayerFromId(id)
+    if player and player.isAdmin then
+        return player.isAdmin() and true or false
+    end
+
+    local aceSrc = tostring(id)
+    return (IsPlayerAceAllowed(aceSrc, 'command')
+        or IsPlayerAceAllowed(aceSrc, 'group.admin')) and true or false
+end
+
+function framework.setMetadata(src, payload)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return end
+
+    if type(payload) ~= 'table' then return end
+
+    for key, data in pairs(payload) do
+        if type(data) == 'table' then
+            if data.type == "add" or data.type == "remove" then
+                local delta = tonumber(data.value)
+                if delta then
+                    local currentValue = tonumber(player.getMeta(key)) or 0
+                    local newValue = data.type == "add" and (currentValue + delta) or (currentValue - delta)
+
+                    player.setMeta(key, lib.math.clamp(newValue, 0, 100))
+                end
+            else
+                player.setMeta(key, data.value)
+            end
         end
     end
-    return repackedTable
 end
 
----@description This will return a table with the item info, {name, label, stack, weight, description, image}
---- This is an internal function and should not be used outside of bridge, use the Inventory module instead when dealing with items.
---- @param item string
---- @return table {name, label, stack, weight, description, image}
-Framework.GetItemInfo = function(item)
-    local items = Framework.ItemList()
-    if not items[item] then return {} end
-    return {name = item, label = items[item].label, stack = false, weight = items[item].weight, description = items[item].description, image = items[item].image}
+function framework.getPlayerMetadata(src, key)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return end
+
+    return player.getMeta(key)
 end
 
----@description This will return the count of the item in the players inventory, if not found will return 0.
---- This is an internal function and should not be used outside of bridge, use the Inventory module instead when dealing with items.
----@param src number
----@param item string
----@param metadata table (optional)
----@return number
-Framework.GetItemCount = function(src, item, metadata)
-    if metadata then
-        print("ESX does not support item metadata searches, please ensure you are using a supported inventory system or that you have the correct start order.")
+function framework.addMoney(src, moneyType, moneyAmount, reason)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return false end
+
+    if moneyType == "cash" then
+        moneyType = "money"
     end
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return 0 end
-    return xPlayer.getInventoryItem(item).count
-end
 
----@description This will return a boolean if the player has the item.
---- This is an internal function and should not be used outside of bridge, use the Inventory module instead when dealing with items.
---- @param src number
---- @param item string
---- @return boolean
-Framework.HasItem = function(src, item)
-    local getCount = Framework.GetItemCount(src, item, nil)
-    return getCount > 0
-end
-
----@description Returns the entire inventory of the player as a table.
---- This is an internal function and should not be used outside of bridge, use the Inventory module instead when dealing with items.
----@param src number
----@return table {name, count, metadata, slot}
-Framework.GetPlayerInventory = function(src)
-    print("ESX does not support item metadata or slots, please ensure you are using a supported inventory system or that you have the correct start order.")
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return {} end
-    local playerItems = xPlayer.getInventory()
-    local repackedTable = {}
-    for _, v in pairs(playerItems) do
-        if v.count > 0 then
-            table.insert(repackedTable, {
-                name = v.name,
-                count = v.count,
-                metadata = {}, -- ESX does not support item metadata
-                slot = 0, -- ESX does not support item slots
-            })
-        end
-    end
-    return repackedTable
-end
-
----@description This will return the item data for the specified slot.
---- This is an internal function and should not be used outside of bridge, use the Inventory module instead when dealing with items.
---- @param src number
---- @param slot number
---- @return table {name, label, weight, count, metadata, slot, stack, description}
-Framework.GetItemBySlot = function(src, slot)
-    print("ESX does not support item slots, please ensure you are using a supported inventory system or that you have the correct start order.")
-    return {} -- ESX does not support item slots
-end
-
----@description Adds the specified metadata key and number value to the player's data.
---- @param src number
---- @param metadata string
---- @param value any
---- @return boolean|nil returns true if the metadata was set successfully, otherwise it returns nil
-Framework.SetPlayerMetadata = function(src, metadata, value)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return end
-    xPlayer.setMeta(metadata, value, nil)
+    player.addAccountMoney(moneyType, moneyAmount, reason)
     return true
 end
 
----@description Gets the specified metadata key to the player's data.
---- @param src number
---- @param metadata string
---- @return any|nil
-Framework.GetPlayerMetadata = function(src, metadata)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return end
-    return xPlayer.getMeta(metadata) or false
+function framework.getMoney(src, moneyType)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return 0 end
+
+    if moneyType == "cash" then
+        moneyType = "money"
+    end
+
+    local account = player.getAccount(moneyType)
+    if not account then return 0 end
+
+    return account.money
 end
 
----@description This is an internal function and should not be used outside of bridge, this is only present in the esx portion.
---- @param src number
---- @param column string
---- @return string|nil
-Framework.GetStatus = function(src, column)
-    --[[
-    defualt esx Available tables are:
-        identifier, accounts, group, inventory, job, job_grade, loadout, metadata, position,
-        firstname, lastname, dateofbirth, sex, height, skin, status, is_dead, id, disabled,
-        last_property, created_at, last_seen, phone_number, pincode
-    ]]
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return end
-    return xPlayer.get(column) or nil
-end
+function framework.removeMoney(src, moneyType, moneyAmount, reason)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return false end
 
----@description This will return a boolean if the player is dead or in last stand.
---- @param src number
---- @return boolean
-Framework.GetIsPlayerDead = function(src)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return false end
-    return xPlayer.get("is_dead") or false
-end
+    if moneyType == "cash" then
+        moneyType = "money"
+    end
 
----@description This will revive a player, if the player is dead or in last stand.
---- @param src number
---- @return boolean
-Framework.RevivePlayer = function(src)
-    src = tonumber(src)
-    if not src then return false end
-    TriggerEvent('esx_ambulancejob:revive', src)
+    local amount = tonumber(moneyAmount)
+    if not amount then return false end
+
+    local account = player.getAccount(moneyType)
+    if not account or account.money < amount then return false end
+
+    player.removeAccountMoney(moneyType, moneyAmount, reason)
     return true
 end
 
---- @description Adds the specified value from the player's thirst level
---- @param src number
---- @param value number
---- @return number | nil
-Framework.AddThirst = function(src, value)
-    local clampIT = Math.Clamp(value, 0, 200000)
-    local levelForEsx = clampIT * 2000
-    TriggerClientEvent('esx_status:add', src, 'thirst', levelForEsx)
-    return levelForEsx
-end
+function framework.getPlayerJobData(src)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return nil end
 
---- @description Adds the specified value from the player's hunger level
---- @param src number
---- @param value number
---- @return number | nil
-Framework.AddHunger = function(src, value)
-    local clampIT = Math.Clamp(value, 0, 200000)
-    local levelForEsx = clampIT * 2000
-    TriggerClientEvent('esx_status:add', src, 'hunger', levelForEsx)
-    return levelForEsx
-end
+    local job = player.getJob and player.getJob() or player.job
+    if not job then return nil end
 
----@description This will get the hunger of a player
---- @param src number
---- @return number
-Framework.GetHunger = function(src)
-    local status = Framework.GetStatus(src, "status")
-    if not status then return 0 end
-    if type(status) ~= "table" then return 0 end
-    for _, entry in ipairs(status) do
-        if entry.name == "hunger" then
-            return math.floor((entry.percent) + 0.5) or 0
-        end
-    end
-end
-
----@description This will get the thirst of a player
---- @param src any
---- @return number
-Framework.GetThirst = function(src)
-    local status = Framework.GetStatus(src, "status")
-    if not status then return 0 end
-    if type(status) ~= "table" then return 0 end
-    for _, entry in ipairs(status) do
-        if entry.name == "thirst" then
-            return math.floor((entry.percent) + 0.5) or 0
-        end
-    end
-end
-
----@description Returns the phone number of the player.
---- @param src number
---- @return string | nil
-Framework.GetPlayerPhone = function(src)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return end
-    return xPlayer.get("phone_number")
-end
-
----@description This will return the job name, label, grade name, and grade level of the player.
----@deprecated
----@param src number
----@return string | nil
----@return string | nil
----@return string | nil
----@return string | nil
-Framework.GetPlayerJob = function(src)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return end
-    local job = xPlayer.getJob()
-    return job.name, job.label, job.grade_label, job.grade
-end
-
----@description This will return the players job name, job label, job grade label job grade level, boss status, and duty status in a table
---- @param src number
---- @return table {jobName, jobLabel, gradeName, gradeLabel, gradeRank, boss, onDuty}
-Framework.GetPlayerJobData = function(src)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return {} end
-    local job = xPlayer.getJob()
-    local isBoss = (job.grade_name == "boss")
     return {
         jobName = job.name,
         jobLabel = job.label,
-        gradeName = job.grade_name,
-        gradeLabel = job.grade_label,
-        gradeRank = job.grade,
-        boss = isBoss,
-        onDuty = job.onduty,
+        grade = job.grade,
+        gradeName = job.grade_label or job.grade_name,
+        onDuty = job.onduty ~= false,
+        isBoss = job.grade_name == 'boss',
     }
 end
 
----@description Returns the players duty status.
---- @param src number
---- @return boolean
-Framework.GetPlayerDuty = function(src)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return false end
-    local job = xPlayer.getJob()
-    if not job.onDuty then return false end
-    return true
-end
+function framework.hasJob(src, job, grade, duty)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return false end
 
----@description This will toggle a players duty status
---- @param src number
---- @param status boolean
---- @return boolean
-Framework.SetPlayerDuty = function(src, status)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return false end
-    local job = xPlayer.getJob()
-    if job.name == 'unemployed' then return false end
-    xPlayer.setJob(job.name, job.grade, status)
-    return true
-end
+    local playerJob = player.getJob()
+    if not playerJob or playerJob.name ~= job then return false end
 
----@description Returns the gang name of the player.
----@param src number
----@return string | nil
-Framework.GetPlayerGang = function(src)
-    print("ESX does not support gangs, please ensure you are using a supported gang system or that you have the correct start order.")
-    return
-end
-
----@description This will get a table of player sources that have the specified job name.
---- @param job string
---- @return table
-Framework.GetPlayersByJob = function(job)
-    return Framework.GetPlayerSourcesByJob(job) or {}
-end
-
----@description Sets the player's job to the specified name and grade.
---- @param src number
---- @param name string
---- @param grade string
-Framework.SetPlayerJob = function(src, name, grade)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return end
-    if not ESX.DoesJobExist(name, grade) then
-        print("^6 Job Does Not Exsist In Framework :NAME " .. name .. " Grade:" .. grade .. " ^0 ")
-        return
+    if grade then
+        local gradeId = tonumber(playerJob.grade)
+        if not gradeId or gradeId < grade then return false end
     end
-    xPlayer.setJob(name, grade, true)
+
+    if duty then if playerJob.onduty == false then return false end end
+
     return true
 end
 
----@description This will add money based on the type of account (money/bank)
---- @param src number
---- @param _type string
---- @param amount number
---- @return boolean
-Framework.AddAccountBalance = function(src, _type, amount)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return false end
-    if _type == 'cash' then _type = 'money' end
-    if amount <= 0 then return false end
-    xPlayer.addAccountMoney(_type, amount)
+function framework.setPlayerDuty(src, onDuty)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return false end
+
+    local job = player.getJob()
+    if not job or job.name == 'unemployed' then return false end
+
+    player.setJob(job.name, job.grade, onDuty)
+    dutyCache.syncOnDutyPlayer(src, player.getJob())
     return true
 end
 
----@description This will remove money based on the type of account (money/bank)
---- @param src number
---- @param _type string
---- @param amount number
---- @return boolean
-Framework.RemoveAccountBalance = function(src, _type, amount)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return false end
-    if _type == 'cash' then _type = 'money' end
-    if amount <= 0 then return false end
-    local accountVal = Framework.GetAccountBalance(src, _type)
-    if accountVal < amount then return false end
-    xPlayer.removeAccountMoney(_type, amount)
+function framework.setPlayerJob(src, name, grade)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return false end
+
+    if not ESX.DoesJobExist(name, grade) then return false end
+
+    player.setJob(name, grade, true)
     return true
 end
 
----@description This will get money based on the type of account (money/bank)
---- @param src number
---- @param _type string
---- @return number
-Framework.GetAccountBalance = function(src, _type)
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return 0 end
-    if _type == 'cash' then _type = 'money' end
-    local balance = xPlayer.getAccount(_type).money or 0
-    if balance <= 0 then return 0 end
-    return balance
-end
+function framework.getPlayersByJob(jobName)
+    local sources = {}
 
----@description This will add an item, and return true or false based on success
---- This is an internal function and should not be used outside of bridge, use the Inventory module instead when dealing with items.
----@param src number
----@param item string
----@param count number
----@param slot number (optional)
----@param metadata table (optional)
----@return boolean
-Framework.AddItem = function(src, item, count, slot, metadata)
-    if slot then print("ESX does not support item slots, please ensure you are using a supported inventory system or that you have the correct start order.") end
-    if metadata then print("ESX does not support item metadata, please ensure you are using a supported inventory system or that you have the correct start order.") end
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return false end
-    xPlayer.addInventoryItem(item, count)
-    TriggerClientEvent("community_bridge:client:inventory:updateInventory", src, { action = "add", item = item, count = count, slot = slot, metadata = metadata })
-    return true
-end
-
----@description Removes the specified item from the player's inventory.
---- This is an internal function and should not be used outside of bridge, use the Inventory module instead when dealing with items.
---- @param src number
---- @param item string
---- @param amount number
---- @param slot number (optional)
---- @param metadata table (optional)
---- @return boolean
-Framework.RemoveItem = function(src, item, amount, slot, metadata)
-    if slot then
-        print("ESX does not support item slots, please ensure you are using a supported inventory system or that you have the correct start order.")
+    if bridge.isHost then
+        for src in pairs(dutyCache.getPlayersWithJob(jobName)) do
+            sources[#sources + 1] = src
+        end
+        table.sort(sources)
+        return sources
     end
-    if metadata then
-        print("ESX does not support item metadata, please ensure you are using a supported inventory system or that you have the correct start order.")
+
+    for _, playerSrc in ipairs(framework.getPlayers()) do
+        local player = ESX.GetPlayerFromId(playerSrc)
+        local job = player and player.getJob and player.getJob()
+        if job and job.name == jobName then
+            sources[#sources + 1] = playerSrc
+        end
     end
-    local xPlayer = Framework.GetPlayer(src)
-    if not xPlayer then return false end
-    xPlayer.removeInventoryItem(item, amount)
-    return true
+    return sources
 end
 
----@description Sets the metadata for the specified item in the player's inventory.
---- This is an internal function and should not be used outside of bridge, use the Inventory module instead when dealing with items.
---- @param src number
---- @param item string
---- @param slot number
---- @param metadata table
---- @return boolean
-Framework.SetMetadata = function(src, item, slot, metadata)
-    print("ESX does not support item metadata, please ensure you are using a supported inventory system or that you have the correct start order.")
-    return false
+function framework.addHunger(src, value)
+    local percent = lib.math.clamp(tonumber(value) or 0, -100, 100)
+    TriggerClientEvent('esx_status:add', src, 'hunger', percent * 10000)
+    return percent
 end
 
----@description This will get all owned vehicles for the player
---- @param src number
---- @return table
-Framework.GetOwnedVehicles = function(src)
-    local citizenId = Framework.GetPlayerIdentifier(src)
-    local result = MySQL.Sync.fetchAll("SELECT vehicle, plate FROM owned_vehicles WHERE owner = '" .. citizenId .. "'")
+function framework.addThirst(src, value)
+    local percent = lib.math.clamp(tonumber(value) or 0, -100, 100)
+    TriggerClientEvent('esx_status:add', src, 'thirst', percent * 10000)
+    return percent
+end
+
+function framework.getOwnedVehicles(src)
+    local identifier = framework.getIdentifier(src)
+    if not identifier then return {} end
+
+    local result = MySQL.query.await('SELECT vehicle, plate FROM owned_vehicles WHERE owner = ?', { identifier })
+    if not result then return {} end
+
     local vehicles = {}
     for i = 1, #result do
-        local vehicle = result[i].vehicle
-        local plate = result[i].plate
-        local model = json.decode(vehicle).model
-        table.insert(vehicles, { vehicle = model, plate = plate })
+        local row = result[i]
+        local model = row.vehicle
+        local decoded = json.decode(row.vehicle)
+        if decoded and decoded.model then
+            model = decoded.model
+        end
+        vehicles[#vehicles + 1] = { vehicle = model, plate = row.plate }
     end
     return vehicles
 end
 
----@description Returns a table of owned vehicles for the player. format is {id = id, vehicle = model, plate = plate}
----@param src number
----@param plate string
----@return table
-Framework.IsVehicleOwnedByPlayer = function(src, plate)
-    local citizenId = Framework.GetPlayerIdentifier(src)
-    local result = MySQL.Sync.fetchAll("SELECT id, vehicle, plate FROM owned_vehicles WHERE owner = '" .. citizenId .. "' AND plate = '" .. plate .. "'")
-    if not result[1] then return false end
-
-    local id = result[1].id
-    local vehicle = result[1].vehicle
-    local model = json.decode(vehicle).model
-    return { id = id, vehicle = model, plate = plate }
-end
-
----@description Registers a usable item with a callback function.
---- @param itemName string
---- @param cb function
-Framework.RegisterUsableItem = function(itemName, cb)
-    local func = function(src, item, itemData)
-        itemData = itemData or item
-        itemData.metadata = itemData.metadata or itemData.info or {}
-        itemData.slot = itemData.id or itemData.slot
-        cb(src, itemData)
+function framework.getPlayers()
+    if ESX.GetPlayers ~= nil then
+        return ESX.GetPlayers()
     end
-    ESX.RegisterUsableItem(itemName, func)
+    local playerList = {}
+    local players = ESX.GetExtendedPlayers()
+    for _, player in ipairs(players) do
+        playerList[#playerList + 1] = tonumber(player.source)
+    end
+    return playerList
 end
 
----@description Event handler for when a player is loaded in ESX framework
----@param src number
-RegisterNetEvent("esx:playerLoaded", function(src)
-    src = src or source
-    TriggerEvent("community_bridge:Server:OnPlayerLoaded", src)
-    local jobData = Framework.GetPlayerJobData(src)
-    if not jobData then return end
-    Framework.AddJobCount(src, jobData.jobName)
-end)
-
----@description Event handler for when a player logs out in ESX framework
----@param src number
-RegisterNetEvent("esx:playerLogout", function(src)
-    src = src or source
-    TriggerEvent("community_bridge:Server:OnPlayerUnload", src)
-end)
-
----@description Event handler for when a player's job is updated in ESX framework
----@param src number
----@param job table
----@param lastJob table
-RegisterNetEvent("esx:setJob", function(src, job, lastJob)
-    src = src or source
-    if not job or not lastJob then return end
-    TriggerEvent("community_bridge:Server:OnPlayerJobChange", src, job.name)
-end)
-
----@description Event handler for when a player disconnects from the server
-AddEventHandler("playerDropped", function()
-    local src = source
-    TriggerEvent("community_bridge:Server:OnPlayerUnload", src)
-end)
-
----@description Callback to get framework jobs list
----@param source number
-Callback.Register('community_bridge:Callback:GetFrameworkJobs', function(source)
-    return Framework.GetFrameworkJobs() or {}
-end)
-
----@description This is linked to an internal function, its an attempt to standardize the item list across frameworks.
----@param source number
-Callback.Register('community_bridge:Callback:GetFrameworkItems', function(source)
-    return Framework.ItemList() or {}
-end)
-
-Framework.Commands = {}
----@description Adds a command to the ESX framework
----@param name string
----@param help string
----@param arguments table
----@param argsrequired boolean
----@param callback function
----@param permission string
----@param ... any
-Framework.Commands.Add = function(name, help, arguments, argsrequired, callback, permission, ...)
-    ESX.RegisterCommand(name, permission, function(xPlayer, args, showError)
-        callback(xPlayer, args)
-    end, false, {
-        help = help,
-        arguments = arguments
-    })
+function framework.getPlayerDob(src)
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return nil end
+    return player.get("dateofbirth")
 end
 
-return Framework
+if bridge.isHost then
+    local loadedPlayers = {}
+
+    local function announcePlayerLoaded(src, identifier)
+        src = tonumber(src)
+        if not src or not identifier or loadedPlayers[src] == identifier then
+            return false
+        end
+        loadedPlayers[src] = identifier
+        TriggerEvent('fivem_Bridge:server:playerLoad', src)
+        return true
+    end
+
+    CreateThread(function()
+        for _, playerSrc in ipairs(framework.getPlayers()) do
+            local player = ESX.GetPlayerFromId(playerSrc)
+            if player then
+                dutyCache.syncOnDutyPlayer(playerSrc, player.getJob())
+                syncBridgePlayer(playerSrc)
+                announcePlayerLoaded(playerSrc, player.getIdentifier())
+            end
+        end
+        dutyCache.syncGlobalJobCounts()
+    end)
+
+    AddEventHandler('esx:playerLoaded', function(src, xPlayer)
+        src = tonumber(src)
+        if not src then return end
+
+        local player = xPlayer or ESX.GetPlayerFromId(src)
+        if player then
+            dutyCache.syncOnDutyPlayer(src, player.getJob())
+            syncBridgePlayer(src)
+        end
+
+        local identifier = player and player.getIdentifier() or framework.getIdentifier(src)
+        if announcePlayerLoaded(src, identifier) then return end
+        if identifier then return end
+
+        SetTimeout(0, function()
+            announcePlayerLoaded(src, framework.getIdentifier(src))
+        end)
+    end)
+
+    AddEventHandler("esx:playerLogout", function(src)
+        TriggerEvent("fivem_Bridge:server:playerUnload", src)
+    end)
+
+    AddEventHandler("esx:setJob", function(src, job)
+        src = tonumber(src)
+        if not src or not job then return end
+        dutyCache.syncOnDutyPlayer(src, job)
+        syncBridgePlayer(src)
+        TriggerEvent('fivem_Bridge:server:playerJobUpdate', src, job.name)
+    end)
+
+    AddEventHandler("playerDropped", function()
+        local src = tonumber(source)
+        if not src then return end
+        TriggerEvent('fivem_Bridge:server:playerUnload', src)
+    end)
+
+    AddEventHandler("fivem_Bridge:server:playerUnload", function(src)
+        src = tonumber(src)
+        if not src then return end
+        loadedPlayers[src] = nil
+        dutyCache.clearOnDutyPlayer(src)
+        BridgePlayers.remove(src)
+    end)
+
+    lib.callback.register('fivem_Bridge:callback:getFrameworkJobs', function()
+        return framework.getFrameworkJobs()
+    end)
+end
+
+ServerHelpers.attachSharedFrameworkApi(framework, dutyCache, function(itemName, handler)
+    return ESX.RegisterUsableItem(itemName, handler)
+end)
+
+return BridgePlayers.attachBridgePlayerApi(framework)

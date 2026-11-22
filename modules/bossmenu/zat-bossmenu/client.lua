@@ -1,12 +1,8 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('zat-bossmenu') ~= 'started' then return end
+local bossmenu = {}
 
-BossMenu = BossMenu or {}
+RegisterNetEvent('fivem_Bridge:client:openBossMenu:zat', function(jobName, jobType)
+    if source ~= 65535 then return end
+    exports['zat-bossmenu']:OpenBossMenu(jobType or jobName)
+end)
 
----This will get the name of the module being used.
----@return string
-BossMenu.GetResourceName = function()
-    return "zat-bossmenu"
-end
-
-return BossMenu
+return bossmenu

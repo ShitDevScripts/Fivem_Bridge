@@ -1,116 +1,104 @@
----@diagnostic disable: duplicate-set-field
+local zones = {}
 
 local resourceName = "PolyZone"
-if GetResourceState(resourceName) == 'missing' or GetResourceState('ox_lib') ~= 'missing' then return end
 
-Require("client.lua", resourceName)
-Require("BoxZone.lua", resourceName)
-Require("EntityZone.lua", resourceName)
-Require("CircleZone.lua", resourceName)
-Require("ComboZone.lua", resourceName)
-Ids = Ids or Require('lib/utility/shared/ids.lua')
-cZones = {
-    All = {}
-}
---- Create a zone of the specified type.
---- Supported types: "box", "sphere", "poly"
----@param type ZoneType
----@param data ZoneData
----@return string|nil id Returns the generated zone id on success, or nil on failure
-function cZones.Create(type, data)
-    assert(type, "Requires zone type ('box', 'sphere', or 'poly')")
-    assert(data, "Requires data table")
-    data.id = Ids.CreateUniqueId(cZones.All)
+zones.All = {}
+
+local function createId(tbl)
+    local id
+    repeat
+        id = ("%08x"):format(math.random(0, 0x7fffffff))
+    until not tbl[id]
+    return id
+end
+
+function zones.Create(zoneType, data)
+    data.id = createId(zones.All)
     data.invoking = GetInvokingResource() or "unknown"
-    local zone = nil
-    if type == "box" then
-        assert(data.coords, "Requires .coords as vector3 in data")
+
+    local zone
+
+    if zoneType == "box" then
         local width = data.size.x or data.length or 1.0
         local height = data.size.y or data.width or 1.0
-        local z = data.size?.z or data.height or 1.0
+        local z = (data.size and data.size.z) or data.height or 1.0
+
         data.size = vec3(width, height, z)
         data.heading = data.heading or data.rotation
         data.rotation = data.heading
+
         zone = BoxZone:Create(data.coords, width, height, {
             name = data.id,
             debugPoly = data.debug,
             minZ = data.coords.z - 0.5,
             maxZ = data.coords.z + z - 0.5,
-            heading = data.heading or data.rotation
+            heading = data.heading or data.rotation,
         })
-    elseif type == "sphere" then
-        assert(data.coords, "Requires .coords as vector3 in data")
-        data.radius = data.radius or data.size?.x or 1
+    elseif zoneType == "sphere" then
+        data.radius = data.radius or (data.size and data.size.x) or 1
+
         zone = CircleZone:Create(data.coords, data.radius, {
             name = data.id,
             debugPoly = data.debug,
         })
-    elseif type == "poly" then
-        assert(data.points, "Requires an array of vector2 in .points")
-        assert(#data.points > 2, "Requires at least three points in .points")
-        local zSize = data.minZ or data.size?.z or data.height or data.thickness or 2
+    elseif zoneType == "poly" then
+        local zSize = data.minZ or (data.size and data.size.z) or data.height or data.thickness or 2
         local firstPoint = data.points[1]
         local firstZ = firstPoint.z
+
         zone = PolyZone:Create(data.points, {
             name = data.id,
             debugPoly = data.debug,
             minZ = firstZ - 0.5,
             maxZ = firstZ and (firstZ + zSize - 0.5) or nil,
-        })      
+        })
     end
+
     if not zone then return end
-    data.zone = zone   
-    zone:onPlayerInOut(function(isInside, _)
+
+    data.zone = zone
+
+    zone:onPlayerInOut(function(isInside)
         if isInside then
-            if data.onEnter or data.OnEnter then
-                (data.onEnter or data.OnEnter)(data)
-            end
+            local onEnter = data.onEnter or data.OnEnter
+            if onEnter then onEnter(data) end
         else
-            if data.onExit or data.OnExit then
-                (data.onExit or data.OnExit)(data)
-            end
+            local onExit = data.onExit or data.OnExit
+            if onExit then onExit(data) end
         end
     end)
-         
-    cZones.All[data.id] = data
+
+    zones.All[data.id] = data
     return data.id
 end
 
---- Destroy a zone by id.
----@param id string
----@return boolean success True if destroyed, false otherwise
-function cZones.Destroy(id)
+function zones.Destroy(id)
     if not id then return false end
-    local zone = cZones.All[id].zone
-    if not zone then return false end
-    zone:destroy()
-    cZones.All[id] = nil
+    local entry = zones.All[id]
+    if not entry or not entry.zone then return false end
+    entry.zone:destroy()
+    zones.All[id] = nil
     return true
 end
 
---- Destroy all zones created by a specific resource.
----@param resource string Name of the invoking resource
----@return boolean success True if operation completed (no guarantee zones existed)
-function cZones.DestroyByResource(resource)
+function zones.DestroyByResource(resource)
     if not resource then return false end
-    for id, zone in pairs(cZones.All) do
-        if zone.invoking == resource then
-            zone.zone:destroy()
+    for id, entry in pairs(zones.All) do
+        if entry.invoking == resource then
+            entry.zone:destroy()
+            zones.All[id] = nil
         end
     end
     return true
 end
 
---- Retrieve zone data by id.
----@param id string
----@return ZoneData|nil
-function cZones.Get(id)
+function zones.Get(id)
     if not id then return nil end
-    return cZones.All[id]
+    return zones.All[id]
 end
 
---- Event handler: clean up zones when a resource stops.
----@param resource string
 RegisterNetEvent("onResourceStop", function(resource)
-    cZones.DestroyByResource(resource)
+    zones.DestroyByResource(resource)
 end)
+
+return zones

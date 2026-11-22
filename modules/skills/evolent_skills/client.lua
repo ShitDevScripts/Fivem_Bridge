@@ -1,21 +1,13 @@
----@diagnostic disable: duplicate-set-field
-Skills = Skills or {}
+local skills = {}
 local resourceName = "evolent_skills"
-local configValue = BridgeSharedConfig.Skills
-if (configValue == "auto" and GetResourceState(resourceName) ~= "started") or (configValue ~= "auto" and configValue ~= resourceName) then return end
 
----This will get the name of the Skills system being used.
----@return string
-Skills.GetResourceName = function()
+function skills.GetResourceName()
     return resourceName
 end
 
----This will return the skill level of the passed skill name.
----@param skillName string
----@return number
-function Skills.GetSkillLevel(skillName)
+function skills.GetSkillLevel(skillName)
     local skillData = exports.evolent_skills:getSkillLevel(skillName)
     return skillData or 0
 end
 
-return Skills
+return skills

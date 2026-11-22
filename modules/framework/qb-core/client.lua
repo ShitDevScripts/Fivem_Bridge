@@ -1,271 +1,187 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('qb-core') ~= 'started' then return end
-if GetResourceState('qbx_core') == 'started' then return end
+local ClientHelpers = require '@fivem_Bridge/modules/framework/client_helpers'
 
-Framework = Framework or {}
+local CachedPlayerJob = nil
 
-QBCore = exports['qb-core']:GetCoreObject()
+local QBCore = exports['qb-core']:GetCoreObject()
 
-Framework.Shared = QBCore.Shared
+RegisterNetEvent('QBCore:Client:UpdateObject', function()
+    QBCore = exports['qb-core']:GetCoreObject()
+end)
 
----@description This will get the name of the framework being used (if a supported framework).
----@return string
-Framework.GetFrameworkName = function()
-    print("This is depricated, please use Framework.GetResourceName() instead.")
-    return Framework.GetResourceName()
-end
-
----@description This will get the name of the in use resource.
----@return string
-Framework.GetResourceName = function()
-    return 'qb-core'
-end
-
----@description This will return true if the player is loaded, false otherwise.
----This could be useful in scripts that rely on player loaded events and offer a debug mode to hit this function.
----@return boolean
-Framework.GetIsPlayerLoaded = function()
-    return LocalPlayer.state.isLoggedIn or false
-end
-
----@description This will return a table of the player data, this will be in the framework format. 
----This is mainly for internal bridge use and should be avoided.
----@return table
-Framework.GetPlayerData = function()
+local function getPlayerData()
     return QBCore.Functions.GetPlayerData()
 end
 
----@description This will return a table of all the jobs in the framework.
----@return table
-Framework.GetFrameworkJobs = function()
-    local jobs = {}
-    for k, v in pairs(QBCore.Shared.Jobs) do
-        table.insert(jobs, {
-            name = k,
-            label = v.label,
-            grade = v.grades
-        })
-    end
-    return jobs
+local function getJob()
+    if CachedPlayerJob then return CachedPlayerJob end
+
+    local data = getPlayerData()
+    return data and data.job
 end
 
----@description This will get the players birth date
----@return string
-Framework.GetPlayerDob = function()
-    local player = Framework.GetPlayerData()
-    local playerData = player.PlayerData
-    return playerData.charinfo.birthdate
-end
-
----@description This will return the players metadata for the specified metadata key.
----@param metadata table | string
----@return table | string | number | boolean
-Framework.GetPlayerMetaData = function(metadata)
-    return Framework.GetPlayerData().metadata[metadata]
-end
-
----@description This will send a notification to the player.
----@param message string
----@param type string
----@param time number
----@return nil
-Framework.Notify = function(message, type, time)
-    TriggerEvent('QBCore:Notify', message, 'primary', time)
-end
-
----@description This will display the help text message on the screen
----@param message string
----@param _position unknown
----@return nil
-Framework.ShowHelpText = function(message, _position)
-    return exports['qb-core']:DrawText(message, _position)
-end
-
----@description This will hide the help text message on the screen
----@return nil
-Framework.HideHelpText = function()
-    return exports['qb-core']:HideText()
-end
-
----@description This will return the players money by type, I recommend not using this
----as its the client and not secure or to be trusted. Use case is for a ui or a menu I guess.
----@param _type string
----@return number
-Framework.GetAccountBalance = function(_type)
-    local player = Framework.GetPlayerData()
-    if not player then return 0 end
-    local account = player.money
-    if _type == 'money' then _type = 'cash' end
-    return account[_type] or 0
-end
-
----@description This will return the item data for the specified item.
----@param item string
----@return table
-Framework.GetItemInfo = function(item)
-    local itemData = QBCore.Shared.Items[item]
-    if not itemData then return {} end
-    local repackedTable = {
-        name = itemData.name,
-        label = itemData.label,
-        stack = itemData.unique,
-        weight = itemData.weight,
-        description = itemData.description,
-        image = itemData.image
-    }
-    return repackedTable
-end
-
----@description This will get the hunger of a player
----@return number
-Framework.GetHunger = function()
-    local hunger = Framework.GetPlayerMetaData("hunger") or 0
-    return math.floor((hunger) + 0.5) or 0
-end
-
----@description This will get the thirst of a player
----@return number
-Framework.GetThirst = function()
-    local thirst = Framework.GetPlayerMetaData("thirst") or 0
-    return math.floor((thirst) + 0.5) or 0
-end
-
----@description This will get the players identifier (citizenid) etc.
----@return string
-Framework.GetPlayerIdentifier = function()
-    return Framework.GetPlayerData().citizenid
-end
-
----@description This will get the players name (first and last).
----@return string
----@return string
-Framework.GetPlayerName = function()
-    local playerData = Framework.GetPlayerData()
-    return playerData.charinfo.firstname, playerData.charinfo.lastname
-end
-
----@deprecated Deprecated: This will return the players job name, job label, job grade label and job grade level
----@return string
----@return string
----@return string
----@return string
-Framework.GetPlayerJob = function()
-    --print("This is depricated, please use Framework.GetPlayerJobData() instead.")
-    local jobData = Framework.GetPlayerJobData()
-    return jobData.jobName, jobData.jobLabel, jobData.gradeName, jobData.gradeRank
-end
-
----@description This will return the players job name, job label, job grade label job grade level, boss status, and duty status in a table
----@return table
-Framework.GetPlayerJobData = function()
-    local playerData = Framework.GetPlayerData()
-    local jobData = playerData.job
-    return {
-        jobName = jobData.name,
-        jobLabel = jobData.label,
-        gradeName = jobData.grade.name,
-        gradeLabel = jobData.grade.name,
-        gradeRank = jobData.grade.level,
-        boss = jobData.isboss,
-        onDuty = jobData.onduty,
-    }
-end
-
----@description Will return boolean if the player has the item.
----@param item string
----@param requiredCount number (optional)
----@return boolean
-Framework.HasItem = function(item, requiredCount)
-	return QBCore.Functions.HasItem(item, requiredCount or 1)
-end
-
----@description This will return the item count for the specified item in the players inventory
----@param item string
----@return number
-Framework.GetItemCount = function(item)
-    local frameworkInv = Framework.GetPlayerData().items
-    local count = 0
-    for _, v in pairs(frameworkInv) do
-        if v.name == item then
-            count = count + (v.amount or v.count)
-        end
-    end
-    return count
-end
-
----@description This will return the players inventory as a table in the ox_inventory style format
----@return table
-Framework.GetPlayerInventory = function()
-    local items = {}
-    local frameworkInv = Framework.GetPlayerData().items
-    for _, v in pairs(frameworkInv) do
-        table.insert(items, {
-            name = v.name,
-            label = v.label,
-            count = v.amount or v.count,
-            slot = v.slot,
-            metadata = v.info or v.metadata or {},
-            stack = v.unique,
-            close = v.useable,
-            weight = v.weight
-        })
-    end
-    return items
-end
-
----@description This will return the vehicle properties for the specified vehicle
----@param vehicle number
----@return table
-Framework.GetVehicleProperties = function(vehicle)
-    if not vehicle or not DoesEntityExist(vehicle) then return {} end
-    local vehicleProps = QBCore.Functions.GetVehicleProperties(vehicle)
-    return vehicleProps or {}
-end
-
----@description This will set the vehicle properties for the specified vehicle
----@param vehicle number
----@param properties table
----@return boolean
-Framework.SetVehicleProperties = function(vehicle, properties)
-    if not vehicle or not DoesEntityExist(vehicle) then return false end
-    if not properties then return false end
-    if NetworkGetEntityIsNetworked(vehicle) then
-        local vehNetID = NetworkGetNetworkIdFromEntity(vehicle)
-        local entOwner = GetPlayerServerId(NetworkGetEntityOwner(vehNetID))
-        if entOwner ~= GetPlayerServerId(PlayerId()) then
-            NetworkRequestControlOfEntity(vehicle)
-            local count = 0
-            while not NetworkHasControlOfEntity(vehicle) and count < 3000 do
-                Wait(1)
-                count = count + 1
-            end
-        end
-    end
-    return true, QBCore.Functions.SetVehicleProperties(vehicle, properties)
-end
-
----@description This will get a players dead status
----@return boolean
-Framework.GetIsPlayerDead = function()
-    local playerData = Framework.GetPlayerData()
-    return playerData.metadata["isdead"] or playerData.metadata["inlaststand"]
-end
-
----@description Event handler for when player is loaded in QB-Core framework
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-    Wait(1500)
-    TriggerEvent('community_bridge:Client:OnPlayerLoaded')
+    if not bridge.isHost then return end
+
+    CreateThread(function()
+        Wait(0)
+
+        local data = getPlayerData()
+        CachedPlayerJob = data and data.job
+
+        TriggerEvent('fivem_Bridge:client:playerLoad')
+    end)
 end)
 
----@description Event handler for when player is unloaded in QB-Core framework
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
-    TriggerEvent('community_bridge:Client:OnPlayerUnload')
+    if not bridge.isHost then return end
+    CachedPlayerJob = nil
+    TriggerEvent('fivem_Bridge:client:playerUnload')
 end)
 
----@description Event handler for when player job is updated in QB-Core framework
----@param data table Job data containing name, label, grade_label, and grade
-RegisterNetEvent('QBCore:Client:OnJobUpdate', function(data)
-    TriggerEvent('community_bridge:Client:OnPlayerJobUpdate', data.name, data.label, data.grade_label, data.grade)
+RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
+    if not bridge.isHost or not job then return end
+
+    CachedPlayerJob = job
+
+    local gradeName = job.grade and job.grade.name or job.grade_label
+    local gradeLevel = job.grade and job.grade.level or job.grade
+
+    TriggerEvent('fivem_Bridge:client:playerJobUpdate', job.name, job.label, gradeName, gradeLevel)
 end)
 
-return Framework
+RegisterNetEvent('QBCore:Client:SetDuty', function(onDuty)
+    if not bridge.isHost then return end
+
+    local data = getPlayerData()
+    if not data or not data.job then return end
+
+    CachedPlayerJob = data.job
+    CachedPlayerJob.onduty = onDuty
+
+    local job = CachedPlayerJob
+    local gradeName = job.grade and job.grade.name or job.grade_label
+    local gradeLevel = job.grade and job.grade.level or job.grade
+
+    TriggerEvent('fivem_Bridge:client:playerJobUpdate', job.name, job.label, gradeName, gradeLevel)
+end)
+
+local framework = {}
+
+function framework.getPlayerData()
+    return getPlayerData()
+end
+
+function framework.getPlayerMetadata(key)
+    local data = getPlayerData()
+    if not data or not data.metadata then return end
+    return data.metadata[key]
+end
+
+function framework.getStress()
+    local data = getPlayerData()
+    if not data or not data.metadata then return 0 end
+    return data.metadata.stress or 0
+end
+
+function framework.getHunger()
+    local data = getPlayerData()
+    if not data or not data.metadata then return 100 end
+    return data.metadata.hunger or 100
+end
+
+function framework.getThirst()
+    local data = getPlayerData()
+    if not data or not data.metadata then return 100 end
+    return data.metadata.thirst or 100
+end
+
+function framework.setStatus(statusType, value)
+    local data = getPlayerData()
+    if not data then return end
+
+    data.metadata = data.metadata or {}
+    if statusType == 'stress' then
+        data.metadata.stress = value
+    elseif statusType == 'hunger' then
+        data.metadata.hunger = value
+    elseif statusType == 'thirst' then
+        data.metadata.thirst = value
+    end
+end
+
+function framework.isOnDuty()
+    local job = getJob()
+    if not job then return false end
+    return job.onduty == true
+end
+
+function framework.getPlayerJobData()
+    local job = getJob()
+    if not job or job.grade == nil then return end
+
+    local grade = job.grade
+
+    return {
+        jobName = job.name,
+        jobLabel = job.label,
+        grade = type(grade) == 'table' and grade.level or grade,
+        gradeName = type(grade) == 'table' and grade.name or job.grade_label,
+        onDuty = job.onduty == true,
+        isBoss = job.isboss == true,
+    }
+end
+
+function framework.hasJob(job, grade, duty)
+    local playerJob = getJob()
+    if not playerJob or playerJob.grade == nil then return false end
+    if playerJob.name ~= job then return false end
+
+    local gradeLevel = type(playerJob.grade) == 'table' and playerJob.grade.level or playerJob.grade
+    if grade and gradeLevel < grade then return false end
+    if duty and not playerJob.onduty then return false end
+    return true
+end
+
+function framework.getFrameworkJobs()
+    return QBCore.Shared.Jobs or {}
+end
+
+function framework.getIdentifier()
+    local data = getPlayerData()
+    return data and data.citizenid
+end
+
+function framework.getCharacterName()
+    local data = getPlayerData()
+    if not data or not data.charinfo then return end
+
+    local first = data.charinfo.firstname
+    local last = data.charinfo.lastname
+    if not first or not last then return end
+
+    return ('%s %s'):format(first, last), first, last
+end
+
+function framework.getIsPlayerLoaded()
+    return LocalPlayer.state.isLoggedIn or false
+end
+
+function framework.getAccountBalance(moneyType)
+    local data = getPlayerData()
+    if not data or not data.money then return 0 end
+    if moneyType == 'money' then moneyType = 'cash' end
+    return data.money[moneyType] or 0
+end
+
+function framework.isPlayerDead()
+    local data = getPlayerData()
+    if not data or not data.metadata then return false end
+    return data.metadata.isdead or data.metadata.inlaststand or false
+end
+
+function framework.getPlayerDob()
+    local data = getPlayerData()
+    return data and data.charinfo and data.charinfo.birthdate
+end
+
+return ClientHelpers.attachBridgeClientApi(framework)

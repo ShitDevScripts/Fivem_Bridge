@@ -1,12 +1,8 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('qbx_management') ~= 'started' then return end
+local bossmenu = {}
 
-BossMenu = BossMenu or {}
+RegisterNetEvent('fivem_Bridge:client:openBossMenu:qbx', function(jobName, jobType)
+    if source ~= 65535 then return end
+    exports.qbx_management:OpenBossMenu(jobType or jobName)
+end)
 
----This will get the name of the module being used.
----@return string
-BossMenu.GetResourceName = function()
-    return "qbx_management"
-end
-
-return BossMenu
+return bossmenu

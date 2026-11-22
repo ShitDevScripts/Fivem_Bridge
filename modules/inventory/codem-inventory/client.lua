@@ -1,66 +1,46 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('codem-inventory') == 'missing' then return end
-Inventory = Inventory or {}
+local inventory = {}
 
 local codem = exports['codem-inventory']
 
----@description This will get the name of the in use resource.
----@return string
-Inventory.GetResourceName = function()
-    return "codem-inventory"
+local function getPlayerItems()
+    return codem:getUserInventory() or codem:GetClientPlayerInventory() or {}
 end
 
----@description Return the item info in oxs format, {name, label, stack, weight, description, image}
----@param item string
----@return table
-Inventory.GetItemInfo = function(item)
-    local itemData = Inventory.Items()
-    if not itemData or not itemData[item] then return {} end
-    local image = Inventory.GetImagePath(itemData[item].image) or Inventory.GetImagePath(item)
-    return {
-        name = itemData[item].name or "Missing Name",
-        label = itemData[item].label or "Missing Label",
-        stack = itemData[item].unique or "false",
-        weight = itemData[item].weight or "0",
-        description = itemData[item].description or "none",
-        image = image,
-    }
-end
+local function countItem(item, metadata)
+    local total = 0
 
----@description This will return the entire items table from the inventory.
----@return table 
-Inventory.Items = function()
-    return codem:GetItemList() or {}
-end
-
----@description This will get the image path for an item, it is an alternate option to GetItemInfo. If a image isnt found will revert to community_bridge logo (useful for menus)
----@param item string
----@return string
-Inventory.GetImagePath = function(item)
-    item = Inventory.StripPNG(item)
-    local file = LoadResourceFile("codem-inventory", string.format("html/itemimages/%s.png", item))
-    local imagePath = file and string.format("nui://codem-inventory/html/itemimages/%s.png", item)
-    return imagePath or "https://avatars.githubusercontent.com/u/47620135"
-end
-
----@description This will return the players inventory in the format of {name, label, count, slot, metadata}
----@return table
-Inventory.GetPlayerInventory = function()
-    local items = {}
-    local inventory = codem:GetClientPlayerInventory()
-    for _, v in pairs(inventory) do
-        table.insert(items, {
-            name = v.name,
-            label = v.label,
-            count = v.amount or v.count,
-            slot = v.slot,
-            metadata = v.info or v.metadata or {},
-            stack = v.unique,
-            close = v.useable,
-            weight = v.weight
-        })
+    for _, itemData in pairs(getPlayerItems()) do
+        if itemData.name == item and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+            total = total + InventoryItemAmount(itemData)
+        end
     end
-    return items
+
+    return total
 end
 
-return Inventory
+function inventory.Items(itemName)
+    local list = codem:GetItemList()
+    return NormalizeItemDefinitions(list, itemName)
+end
+
+function inventory.hasItem(item, count, metadata)
+    return countItem(item, metadata) >= (count or 1)
+end
+
+function inventory.getImagePath(itemName)
+    return InventoryBuildImageUrl(itemName, inventory.Items(itemName), 'codem-inventory', 'html/images')
+end
+
+function inventory.getItemInfo(itemName)
+    return InventoryBuildItemInfo(itemName, inventory.Items(itemName), 'codem-inventory', 'html/images')
+end
+
+function inventory.getItemCount(item, metadata)
+    return countItem(item, metadata)
+end
+
+function inventory.getInventoryItems()
+    return NormalizeInventoryItems(codem:getUserInventory() or codem:GetClientPlayerInventory() or {})
+end
+
+return inventory

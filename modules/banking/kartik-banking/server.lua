@@ -1,45 +1,25 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('kartik-banking') == 'missing' then return end
-Banking = Banking or {}
+local banking = {}
+local Banking = exports['kartik-banking']
 
-local kartik = exports['kartik-banking']
-
----This will get the name of the Managment system being being used.
----@return string
-Banking.GetManagmentName = function()
-    return 'kartik-banking'
+function banking.GetManagmentName()
+    return "kartik-banking"
 end
 
----This will get the name of the in use resource.
----@return string
-Banking.GetResourceName = function()
-    return 'kartik-banking'
+function banking.GetResourceName()
+    return "kartik-banking"
 end
 
----This will return a number
----@param account string
----@return number
-Banking.GetAccountMoney = function(account)
-    local balance = kartik:GetAccountMoney(account)
+function banking.GetAccountMoney(account)
+    local balance = Banking:GetAccountMoney(account)
     return balance or 0
 end
 
----This will add money to the specified account of the passed amount
----@param account string
----@param amount number
----@param reason string
----@return boolean
-Banking.AddAccountMoney = function(account, amount, reason)
-    return kartik:AddAccountMoney(account, amount, reason)
+function banking.AddAccountMoney(account, amount, reason)
+    return Banking:AddAccountMoney(account, amount, reason)
 end
 
----This will remove money from the specified account of the passed amount
----@param account string
----@param amount number
----@param reason string
----@return boolean
-Banking.RemoveAccountMoney = function(account, amount, reason)
-    return kartik:RemoveAccountMoney(account, amount, reason)
+function banking.RemoveAccountMoney(account, amount, reason)
+    return Banking:RemoveAccountMoney(account, amount, reason)
 end
 
-return Banking
+return banking

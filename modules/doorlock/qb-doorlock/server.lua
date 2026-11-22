@@ -1,21 +1,12 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('qb-doorlock') == 'missing' then return end
+local doorlock = {}
 
-Doorlock = Doorlock or {}
-
----This will toggle the lock status of the door.
----@param doorID string
----@param toggle boolean
----@return boolean
-Doorlock.ToggleDoorLock = function(doorID, toggle)
+function doorlock.ToggleDoorLock(doorID, toggle)
     TriggerClientEvent('qb-doorlock:client:setState', -1, 0, doorID, toggle, false, false, false)
     return true
 end
 
----This will get the name of the in use resource.
----@return string
-Doorlock.GetResourceName = function()
+function doorlock.GetResourceName()
     return 'qb-doorlock'
 end
 
-return Doorlock
+return doorlock

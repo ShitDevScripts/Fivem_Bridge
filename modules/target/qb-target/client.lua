@@ -1,230 +1,387 @@
----@diagnostic disable: duplicate-set-field
-local resourceName = "qb-target"
-if GetResourceState(resourceName) == 'missing' then return end
-if GetResourceState("ox_target") ~= 'missing' then return end
+local target = {}
 
-Target = Target or {}
-local targetDebug = BridgeSharedConfig and BridgeSharedConfig.DebugLevel == 2 or false
-local targetZones = {}
-local qb_target = exports['qb-target']
+local namesToLabels = {}
 
-function Target.GetResourceName()
-    return "qb-target"
+local qb_target = exports["qb-target"]
+
+local trackZone = CreateTargetCleanup(function(zoneName)
+    qb_target:RemoveZone(zoneName)
+end)
+
+local function generateUUID()
+    local template = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+    return template:gsub("[xy]", function(c)
+        local v = (c == "x") and math.random(0, 15) or math.random(8, 11)
+        return string.format("%x", v)
+    end)
 end
 
-local function getLargestDistance(data)
-    local largestDistance = -1
-    for _, v in pairs(data) do
-        if v.distance and v.distance > largestDistance then
-            largestDistance = v.distance
-        end
+local function split(inputstr, sep)
+    if sep == nil then
+        sep = "%s"
     end
-    return largestDistance ~= -1 and largestDistance or 2.0
+    local t = {}
+    for str in string.gmatch(inputstr, "([^" .. sep .. "]+)") do
+        t[#t + 1] = str
+    end
+    return t
 end
 
+local function convertToArray(data)
+    if type(data) ~= "table" then
+        return { data }
+    end
 
----This is an internal function that is used to fix the options passed to fit alternative target systems, for example qb-ox or ox-qb etc.
----@param options table
----@return table
-function Target.FixOptions(options)
-    for k, v in pairs(options) do
-        local action = v.onSelect or v.action
-        local select = action and function(entityOrData)
-            if type(entityOrData) == 'table' then
-                return action(entityOrData.entity)
-            end
-            return action(entityOrData)
+    local key = next(data)
+
+    if type(key) == "string" then
+        local arr = {}
+        for k, v in pairs(data) do
+            arr[#arr + 1] = k
         end
-        if v.serverEvent then
-            v.type = "server"
-            v.event = v.serverEvent
-        elseif v.event then
-            v.type = "client"
-            v.event = v.event
+        return arr
+    else
+        return data
+    end
+end
+
+local function convertOptionsFromOxTarget(payload)
+    local options = {}
+    local function formatQbOption(zone, o)
+        local option = {
+            type = o.event and "client" or o.serverEvent and "server" or o.export and "export" or "client",
+            event = o.event or o.serverEvent,
+            icon = o.icon,
+            item = o.items,
+            label = o.label
+        }
+
+        if o.canInteract then
+            option.canInteract = o.canInteract
         end
-        options[k].action = select
-        options[k].job = v.job or v.groups
-        options[k].jobType = v.jobType
-        local optionsCanInteract = v.canInteract
-        if optionsCanInteract then
-            local id = Target.CreateCanInteract(optionsCanInteract)
-            v.canInteract = function(...)
-                return Target.CanInteract(id, ...)
+
+        if o.onSelect then
+            option.action = function(entity)
+                local coords = zone.coords
+                if entity and DoesEntityExist(entity) then
+                    coords = GetEntityCoords(entity)
+                end
+                if not coords then
+                    coords = GetEntityCoords(cache.ped)
+                end
+
+                local distance = #(GetEntityCoords(cache.ped) - coords)
+
+                o.onSelect({
+                    entity = entity,
+                    coords = coords,
+                    distance = distance,
+                    zone = zone.name,
+                })
             end
+        end
+
+        if not o.onSelect and o.export then
+            option.action = function(entity)
+                local coords = zone.coords
+                if entity and DoesEntityExist(entity) then
+                    coords = GetEntityCoords(entity)
+                end
+                if not coords then
+                    coords = GetEntityCoords(cache.ped)
+                end
+
+                local distance = #(GetEntityCoords(cache.ped) - coords)
+                local exportInfo = split(o.export, ".")
+                local exportResource = exportInfo[1]
+                local exportFunction = exportInfo[2]
+                exports[exportResource][exportFunction](nil, {
+                    entity = entity,
+                    coords = coords,
+                    distance = distance,
+                    zone = zone.name,
+                }
+                )
+            end
+        end
+
+        return option
+    end
+
+    for i = 1, #payload.options do
+        local o = payload.options[i]
+
+        namesToLabels[o.name] = o.label
+
+        if o.groups then
+            local jobs = convertToArray(o.groups)
+
+            for j = 1, #jobs do
+                local jobName = jobs[j]
+                local index = #options + 1
+                options[index] = formatQbOption(payload, o)
+                options[index].job = jobName
+            end
+        else
+            options[#options + 1] = formatQbOption(payload, o)
         end
     end
+
     return options
 end
 
----This will toggle the targeting system on or off. This is useful for when you want to disable the targeting system for a specific player entirely.
----@param bool boolean
-function Target.DisableTargeting(bool)
-    qb_target:AllowTargeting(not bool)
+function target.removeZone(zoneId)
+    qb_target:RemoveZone(zoneId)
 end
 
----This will add target options to players.
----@param options table
-function Target.AddGlobalPlayer(options)
-    options = Target.FixOptions(options)
-    qb_target:AddGlobalPlayer({
+function target.addBoxZone(payload)
+    local sizeZ = payload.size.z / 2.0
+    local minZ, maxZ = (payload.coords.z - sizeZ), (payload.coords.z + sizeZ)
+
+    local options = convertOptionsFromOxTarget(payload)
+
+    qb_target:AddBoxZone(payload.name, payload.coords, payload.size.x, payload.size.y, {
+        name = payload.name,
+        heading = payload.rotation or 0,
+        debugPoly = payload.debug,
+        minZ = minZ,
+        maxZ = maxZ,
+    }, {
         options = options,
-        distance = getLargestDistance(options)
+        distance = 2.5
     })
+
+    trackZone(payload.name)
+    return payload.name
 end
 
----This will remove target options from all players.
-function Target.RemoveGlobalPlayer()
-    qb_target:RemoveGlobalPlayer()
-end
+function target.addSphereZone(payload)
+    local size = payload.radius / 2.0
+    local minZ, maxZ = (payload.coords.z - size), (payload.coords.z + size)
 
----This will add target options to all specified models. This is useful for when you want to add target options to all models of a specific type.
----@param options table
-function Target.AddGlobalPed(options)
-    options = Target.FixOptions(options)
-    qb_target:AddGlobalPed({
+    local options = convertOptionsFromOxTarget(payload)
+
+    qb_target:AddBoxZone(payload.name, payload.coords, size, size, {
+        name = payload.name,
+        heading = 0,
+        debugPoly = payload.debug,
+        minZ = minZ,
+        maxZ = maxZ,
+    }, {
         options = options,
-        distance = getLargestDistance(options)
+        distance = 2.5
     })
+
+    trackZone(payload.name)
+    return payload.name
 end
 
----This will remove target options from all peds. This is useful for when you want to remove target options from all peds.
----@param options any
-function Target.RemoveGlobalPed(options)
-    qb_target:RemoveGlobalPed(options)
-end
-
----This will add taget options to all vehicles.
----@param options table
-function Target.AddGlobalVehicle(options)
-    options = Target.FixOptions(options)
-    qb_target:AddGlobalVehicle({
+function target.addLocalEntity(entities, options)
+    local op = convertOptionsFromOxTarget({
+        name = generateUUID(),
         options = options,
-        distance = getLargestDistance(options)
     })
-end
 
----This will add a networked entity to the target system.
----@param netids table | number
----@param options table
-function Target.AddNetworkedEntity(netids, options)
-    options = Target.FixOptions(options)
-    qb_target:AddTargetEntity(netids, options)
-end
-
----This will remove a networked entity from the target system.
----@param netids table | number
----@param optionNames string
-function Target.RemoveNetworkedEntity(netids, optionNames)
-    qb_target:RemoveTargetEntity(netids, optionNames)
-end
-
----This will remove target options from all vehicles.
----@param options table
-function Target.RemoveGlobalVehicle(options)
-    local assembledLables = {}
-    for k, v in pairs(options) do
-        table.insert(assembledLables, v.label)
-    end
-    qb_target:RemoveGlobalVehicle(assembledLables)
-end
-
----This will generate targets on non networked entites with the passed options.
----@param entities number | table
----@param options table
-function Target.AddLocalEntity(entities, options)
-    options = Target.FixOptions(options)
     qb_target:AddTargetEntity(entities, {
-        options = options,
-        distance = getLargestDistance(options)
+        options = op,
+        distance = 2.5
     })
 end
 
----This will remove the target options from a local entity. This is useful for when you want to remove target options from a specific entity.
----@param entity number | table
----@param labels string | table | nil
-function Target.RemoveLocalEntity(entity, labels)
-    qb_target:RemoveTargetEntity(entity, labels)
+function target.removeLocalEntity(entities, optionNames)
+    local labels = {}
+    if type(optionNames) == "string" then
+        if namesToLabels[optionNames] then
+            labels[#labels + 1] = namesToLabels[optionNames]
+        end
+    else
+        for i = 1, #optionNames do
+            if namesToLabels[optionNames[i]] then
+                labels[#labels + 1] = namesToLabels[optionNames[i]]
+            end
+        end
+    end
+
+    if #labels == 0 then return end
+
+    qb_target:RemoveTargetEntity(entities, labels)
 end
 
----This will add target options to all specified models. This is useful for when you want to add target options to all models of a specific type.
----@param models number | table
----@param options table
-function Target.AddModel(models, options, distance)
-    options = Target.FixOptions(options)
+function target.addEntity(netIds, options)
+    local entities = {}
+    if type(netIds) ~= "table" then
+        entities[1] = NetworkGetEntityFromNetworkId(netIds)
+    else
+        for i = 1, #netIds do
+            entities[i] = NetworkGetEntityFromNetworkId(netIds[i])
+        end
+    end
+
+    local op = convertOptionsFromOxTarget({
+        name = generateUUID(),
+        options = options,
+    })
+
+    qb_target:AddTargetEntity(entities, {
+        options = op,
+        distance = 2.5
+    })
+end
+
+function target.removeEntity(netIds, optionNames)
+    local entities = {}
+    if type(netIds) ~= "table" then
+        entities[1] = NetworkGetEntityFromNetworkId(netIds)
+    else
+        for i = 1, #netIds do
+            entities[i] = NetworkGetEntityFromNetworkId(netIds[i])
+        end
+    end
+
+    local labels = {}
+    if type(optionNames) == "string" then
+        if namesToLabels[optionNames] then
+            labels[#labels + 1] = namesToLabels[optionNames]
+        end
+    else
+        for i = 1, #optionNames do
+            if namesToLabels[optionNames[i]] then
+                labels[#labels + 1] = namesToLabels[optionNames[i]]
+            end
+        end
+    end
+
+    if #labels == 0 then return end
+
+    qb_target:RemoveTargetEntity(entities, labels)
+end
+
+function target.addGlobalPed(options)
+    local op = convertOptionsFromOxTarget({
+        name = generateUUID(),
+        options = options,
+    })
+
+    qb_target:AddGlobalPed({
+        options = op,
+        distance = 2.5
+    })
+end
+
+function target.removeGlobalPed(optionNames)
+    local labels = {}
+    if type(optionNames) == "string" then
+        if namesToLabels[optionNames] then
+            labels[#labels + 1] = namesToLabels[optionNames]
+        end
+    else
+        for i = 1, #optionNames do
+            if namesToLabels[optionNames[i]] then
+                labels[#labels + 1] = namesToLabels[optionNames[i]]
+            end
+        end
+    end
+
+    if #labels == 0 then return end
+
+    qb_target:RemoveGlobalPed(labels)
+end
+
+function target.addGlobalPlayer(options)
+    local op = convertOptionsFromOxTarget({
+        name = generateUUID(),
+        options = options,
+    })
+
+    qb_target:AddGlobalPlayer({
+        options = op,
+        distance = 2.5
+    })
+end
+
+function target.removeGlobalPlayer(optionNames)
+    local labels = {}
+    if type(optionNames) == "string" then
+        if namesToLabels[optionNames] then
+            labels[#labels + 1] = namesToLabels[optionNames]
+        end
+    else
+        for i = 1, #optionNames do
+            if namesToLabels[optionNames[i]] then
+                labels[#labels + 1] = namesToLabels[optionNames[i]]
+            end
+        end
+    end
+
+    if #labels == 0 then return end
+
+    qb_target:RemoveGlobalPlayer(labels)
+end
+
+function target.addGlobalVehicle(options)
+    local op = convertOptionsFromOxTarget({
+        name = generateUUID(),
+        options = options,
+    })
+
+    qb_target:AddGlobalVehicle({
+        options = op,
+        distance = 2.5
+    })
+end
+
+function target.removeGlobalVehicle(optionNames)
+    local labels = {}
+    if type(optionNames) == "string" then
+        if namesToLabels[optionNames] then
+            labels[#labels + 1] = namesToLabels[optionNames]
+        end
+    else
+        for i = 1, #optionNames do
+            if namesToLabels[optionNames[i]] then
+                labels[#labels + 1] = namesToLabels[optionNames[i]]
+            end
+        end
+    end
+
+    if #labels == 0 then return end
+
+    qb_target:RemoveGlobalVehicle(labels)
+end
+
+function target.addModel(models, options)
+    local op = convertOptionsFromOxTarget({
+        name = generateUUID(),
+        options = options,
+    })
+
     qb_target:AddTargetModel(models, {
-        options = options,
-        distance = getLargestDistance(options),
+        options = op,
+        distance = 2.5,
     })
 end
 
----This will remove target options from all specified models.
----@param model number
-function Target.RemoveModel(model)
-    qb_target:RemoveTargetModel(model)
-end
-
----This will add a box zone to the target system. This is useful for when you want to add target options to a specific area.
----@param name string
----@param coords table
----@param size table
----@param heading number
----@param options table
-function Target.AddBoxZone(name, coords, size, heading, options, debug)
-    options = Target.FixOptions(options)
-    if not next(options) then return end
-    qb_target:AddBoxZone(name, coords, size.x, size.y, {
-        name = name,
-        debugPoly = debug or targetDebug,
-        heading = heading,
-        minZ = coords.z - (size.z * 0.5),
-        maxZ = coords.z + (size.z * 0.5),
-    }, {
-        options = options,
-        distance = getLargestDistance(options),
-    })
-    table.insert(targetZones, { name = name, creator = GetInvokingResource() or GetCurrentResourceName() })
-    return name
-end
-
----This will add a circle zone to the target system. This is useful for when you want to add target options to a specific area.
----@param name string
----@param coords table
----@param radius number
----@param options table
-function Target.AddSphereZone(name, coords, radius, options, debug)
-    options = Target.FixOptions(options)
-    qb_target:AddCircleZone(name, coords, radius, {
-        name = name,
-        debugPoly = targetDebug or debug,
-    }, {
-        options = options,
-        distance = getLargestDistance(options),
-    })
-    table.insert(targetZones, { name = name, creator = GetInvokingResource() or GetCurrentResourceName() })
-    return name
-end
-
----This will remove target options from a specific zone.
----@param name string
-function Target.RemoveZone(name)
-    if not name then return end
-    for _, data in pairs(targetZones) do
-        if data.name == name then
-            qb_target:RemoveZone(name)
-            table.remove(targetZones, _)
-            break
+function target.removeModel(models, optionNames)
+    local labels = {}
+    if type(optionNames) == "string" then
+        if namesToLabels[optionNames] then
+            labels[#labels + 1] = namesToLabels[optionNames]
+        end
+    else
+        for i = 1, #optionNames do
+            if namesToLabels[optionNames[i]] then
+                labels[#labels + 1] = namesToLabels[optionNames[i]]
+            end
         end
     end
+
+    if #labels == 0 then return end
+
+    qb_target:RemoveTargetModel(models, labels)
 end
 
-AddEventHandler('onResourceStop', function(resource)
-    if resource ~= GetCurrentResourceName() then return end
-    for _, target in pairs(targetZones) do
-        if target.creator == resource then
-            qb_target:RemoveZone(target.name)
-        end
-    end
-    targetZones = {}
-end)
+function target.disableTargeting(disable)
+    qb_target:AllowTargeting(not disable)
+end
 
-return Target
+return target

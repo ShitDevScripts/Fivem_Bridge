@@ -1,256 +1,178 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('core_inventory') == 'missing' then return end
+local inventory = {}
 
-Inventory = Inventory or {}
-Inventory.Stashes = Inventory.Stashes or {}
-local core = exports.core_inventory
+local core = exports['core_inventory']
 
----This will get the name of the in use resource.
----@return string
-Inventory.GetResourceName = function()
-    return "core_inventory"
+local registeredStashes = {}
+
+local function resolveInv(inv)
+    if type(inv) ~= 'string' then return inv end
+    if inv:sub(1, 6) == 'stash-' then return inv end
+
+    return ('stash-%s'):format((inv:gsub(' ', '')))
 end
 
----This will add an item, and return true or false based on success
----@param src number
----@param item string
----@param count number
----@param slot number
----@param metadata table
----@return boolean
-Inventory.AddItem = function(src, item, count, slot, metadata)
-    -- https://docs.c8re.store/core-inventory/exports#server-exports-%E2%80%94-items
-    local success = core:addItem(src, item, count, metadata)
-    if not success then return false end
-    TriggerClientEvent("community_bridge:client:inventory:updateInventory", src, {action = "add", item = item, count = count, slot = slot, metadata = metadata})
-    return success or false
-end
+local function getItems(inv)
+    local data = core:getInventory(resolveInv(inv))
 
----This will remove an item, and return true or false based on success
----@param src number
----@param item string
----@param count number
----@param slot number
----@param metadata table
----@return boolean
-Inventory.RemoveItem = function(src, item, count, slot, metadata)
-    if not slot and metadata then
-        local inv = Inventory.GetPlayerInventory(src)
-        if not inv then return false end
-        for _, v in pairs(inv) do
-            if v.name == item and v.metadata == metadata then
-                slot = v.id or v.slot
-                break
-            end
-        end
+    if type(data) == 'table' then
+        return data.content or data.items or data
     end
-    TriggerClientEvent("community_bridge:client:inventory:updateInventory", src, {action = "remove", item = item, count = count, slot = slot, metadata = metadata})
-    if slot then
-        -- https://docs.c8re.store/core-inventory/exports#server-exports-%E2%80%94-items
-        return core:removeItemExact(src, slot, count)
-    end
-    core:removeItem(src, item, count)
-    return true
-end
 
----This will return the count of the item in the players inventory, if not found will return 0.
----if metadata is passed it will find the matching items count.
----@param src number
----@param item string
----@param metadata table
----@return number
-Inventory.GetItemCount = function(src, item, metadata)
-    if metadata then
-        local inv = Inventory.GetPlayerInventory(src)
-        local deepCount = 0
-        if not inv then return 0 end
-        for _, v in pairs(inv) do
-            if v.name == item and v.metadata == metadata then
-                deepCount = deepCount + v.count
-            end
-        end
-        return deepCount
-    end
-    local count = core:getItemCount(src, item)
-    return count or 0
-end
-
----This wil return the players inventory.
----@param src number
----@return table
-Inventory.GetPlayerInventory = function(src)
-    local frameworkInUse = Bridge.Framework.GetFrameworkName()
-    if frameworkInUse == 'qb-core' then
-        return Bridge.Framework.GetPlayerInventory(src)
-    end
-    local playerItems = core:getInventory(src)
-    local repackedTable = {}
-    for _, v in pairs(playerItems) do
-        if (v.metadata or v.info) and (v.count or v.amount) > 1 then
-            local plaseFixThisExportCuzThisIsPainful = core:getItems(src, v.name)
-            if plaseFixThisExportCuzThisIsPainful then
-                for _, item in pairs(plaseFixThisExportCuzThisIsPainful) do
-                    table.insert(repackedTable, {
-                        name = v.name,
-                        count = item.count or item.amount,
-                        metadata = item.metadata or item.info,
-                        slot = item.id or item.slot,
-                    })
-                end
-            end
-        else
-            table.insert(repackedTable, {
-                name = v.name,
-                count = v.count or v.amount,
-                metadata = v.metadata or v.info,
-                slot = v.id or v.slot,
-            })
-        end
-    end
-    return repackedTable
-end
-
----Returns the specified slot data as a table.
----format {weight, name, metadata, slot, label, count}
----@param src number
----@param slot number
----@return table
-Inventory.GetItemBySlot = function(src, slot)
-    local inv = Inventory.GetPlayerInventory(src)
-    if not inv then return {} end
-    for _, v in pairs(inv) do
-        if (v.slot == slot) or (v.id == slot) then
-            return {
-                name = v.name,
-                count = v.count,
-                metadata = v.metadata,
-                slot = v.id or v.slot,
-            }
-        end
-    end
     return {}
 end
 
----This will set the metadata of an item in the inventory.
----@param src number
----@param item string
----@param slot number
----@param metadata table
----@return nil
-Inventory.SetMetadata = function(src, item, slot, metadata)
-    core:setMetadata(src, slot, metadata)
+local function countItems(inv, item, metadata)
+    if not metadata then
+        return core:getItemCount(resolveInv(inv), item) or 0
+    end
+
+    local total = 0
+
+    for _, itemData in pairs(getItems(inv)) do
+        if itemData.name == item and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+            total = total + InventoryItemAmount(itemData)
+        end
+    end
+
+    return total
 end
 
----This will open the specified stash for the src passed.
----@param src number
----@param _type string
----@param id number||string
----@return nil
-Inventory.OpenStash = function(src, _type, id)
-    _type = _type or "stash"
-    local tbl = Inventory.Stashes[id]
-    core:openInventory(src, id, _type, tbl.slots or 30, tbl.weight or 50000, true, nil, false)
+local function resolveRemoveUniqueId(inv, item, metadata, slot)
+    if not slot and not metadata then return nil end
+
+    for contentKey, itemData in pairs(getItems(inv)) do
+        if itemData.name == item
+            and (not slot or itemData.slot == slot)
+            and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata)
+        then
+            return contentKey
+        end
+    end
+
+    return nil
 end
 
----This will register a stash
----@param id number|string
----@param label string
----@param slots number
----@param weight number
----@param owner string
----@param groups table
----@param coords table
----@return boolean
----@return string|number
-Inventory.RegisterStash = function(id, label, slots, weight, owner, groups, coords)
-    if Inventory.Stashes[id] then return true, id end
-    if not slots then slots = 30 end
-    local mathyShit = slots / 2
-    Inventory.Stashes[id] = {
-        id = id,
-        label = label,
-        slots = mathyShit,
-        weight = mathyShit,
-        owner = owner,
-        groups = groups,
-        coords = coords
-    }
-    return true, id
+function inventory.Items(itemName)
+    local list = core:getItemsList()
+    return NormalizeItemDefinitions(list, itemName)
 end
 
----@description This will return a boolean if the player has the item.
----@param src number
----@param item string
----@param requiredCount number (optional)
----@return boolean
-Inventory.HasItem = function(src, item, requiredCount)
-    local count = Inventory.GetItemCount(src, item, nil)
-    return count >= (requiredCount or 1)
+function inventory.getImagePath(itemName)
+    return InventoryBuildImageUrl(itemName, inventory.Items(itemName), 'core_inventory', 'html/img')
 end
 
----This is to get if there is available space in the inventory, will return boolean.
----@param src number
----@param item string
----@param count number
----@return boolean
-Inventory.CanCarryItem = function(src, item, count)
+function inventory.getItemInfo(itemName)
+    return InventoryBuildItemInfo(itemName, inventory.Items(itemName), 'core_inventory', 'html/img')
+end
+
+function inventory.addItem(inv, item, count, metadata, slot)
+    local inventoryType = type(inv) == 'string' and 'stash' or nil
+    return core:addItem(resolveInv(inv), item, count or 1, metadata, inventoryType)
+end
+
+function inventory.removeItem(inv, item, count, metadata, slot)
+    count = count or 1
+    local uniqueId = resolveRemoveUniqueId(inv, item, metadata, slot)
+
+    if uniqueId then
+        return core:removeItemExact(resolveInv(inv), uniqueId, count)
+    end
+
+    local inventoryType = type(inv) == 'string' and 'stash' or nil
+    return core:removeItem(resolveInv(inv), item, count, inventoryType)
+end
+
+function inventory.hasItem(inv, item, count, metadata)
+    if metadata then
+        return countItems(inv, item, metadata) >= (count or 1)
+    end
+
+    return core:hasItem(resolveInv(inv), item, count or 1)
+end
+
+function inventory.getItemCount(inv, item, metadata)
+    return countItems(inv, item, metadata)
+end
+
+function inventory.getInventoryItems(inv)
+    return NormalizeInventoryItems(getItems(inv))
+end
+
+function inventory.setMetadata(inv, slot, metadata)
+    core:setMetadata(resolveInv(inv), slot, metadata)
     return true
 end
 
----This will add items to a trunk, and return true or false based on success
----If a trunk with the identifier does not exist, it will create one with default values.
----@param identifier string
----@param items table
----@return boolean
-Inventory.AddTrunkItems = function(identifier, items)
-    if type(items) ~= "table" then return false end
-    return false, print("AddItemsToTrunk is not implemented in core_inventory, because of this we dont have a way to add items to a trunk.")
+function inventory.getSlot(inv, slot)
+    return NormalizeInventoryItem(core:getItemBySlot(resolveInv(inv), slot), slot)
 end
 
----This will update the plate to the vehicle inside the inventory. (It will also update with jg-mechanic if using it)
----@param oldplate string
----@param newplate string
----@return boolean
-Inventory.UpdatePlate = function(oldplate, newplate)
-    -- have no clue if this will work but fingers crossed
-    local queries = {
-        'UPDATE coreinventories SET name = @newplate WHERE name = @oldplate',
-        'UPDATE coreinventories SET name = @newplate WHERE name = @glovebox_oldplate',
-        'UPDATE coreinventories SET name = @newplate WHERE name = @trunk_oldplate',
+function inventory.clearInventory(inv, keep)
+    if not keep then
+        core:clearInventory(resolveInv(inv))
+        return
+    end
+
+    local keepSet = {}
+
+    if type(keep) == 'string' then
+        keepSet[keep] = true
+    else
+        for i = 1, #keep do
+            keepSet[keep[i]] = true
+        end
+    end
+
+    for contentKey, itemData in pairs(getItems(inv)) do
+        if itemData.name and not keepSet[itemData.name] then
+            core:removeItemExact(resolveInv(inv), contentKey, InventoryItemAmount(itemData))
+        end
+    end
+end
+
+function inventory.canCarryItem(inv, item, count, metadata)
+    return core:canCarry(resolveInv(inv), item, count or 1, metadata)
+end
+
+function inventory.registerStash(id, label, slots, maxWeight, owner, groups, coords)
+    if type(id) ~= 'string' or id == '' then return false end
+
+    registeredStashes[id] = {
+        label = label,
+        owner = owner,
+        groups = groups,
     }
-    local values = {
-        newplate = newplate,
-        oldplate = oldplate,
-        glovebox_oldplate = 'glovebox-' .. oldplate,
-        trunk_oldplate = 'trunk-' .. oldplate
-    }
-    MySQL.transaction.await(queries, values)
-    if GetResourceState('jg-mechanic') == 'missing' then return true end
-    return true, exports["jg-mechanic"]:vehiclePlateUpdated(oldplate, newplate)
+
+    return true
 end
 
----This will get the image path for an item, it is an alternate option to GetItemInfo. If a image isnt found will revert to community_bridge logo (useful for menus)
----@param item string
----@return string
-Inventory.GetImagePath = function(item)
-    item = Inventory.StripPNG(item)
-    local file = LoadResourceFile("core_inventory", string.format("html/img/%s.png", item))
-    local imagePath = file and string.format("nui://core_inventory/html/img/%s.png", item)
-    return imagePath or "https://avatars.githubusercontent.com/u/47620135"
+function inventory.openStash(src, id)
+    if type(src) ~= 'number' or type(id) ~= 'string' or id == '' then return false end
+
+    local stash = registeredStashes[id]
+
+    core:openInventory(src, resolveInv(id), 'stash', stash and stash.label, nil, true)
+    return true
 end
 
----This will return the entire items table from the inventory.
----@return table 
-Inventory.Items = function()
-    return core:getItemsList()
+function inventory.registerShop(shopType, shopData)
+    lib.print.debug(('[bridge-inventory] Warning: core_inventory has no server-side shop registration, cannot register shop "%s".'):format(shopType))
+    return false
 end
 
-Inventory.OpenPlayerInventory = function(src, target)
-    assert(src, "OpenPlayerInventory: src is required")
-    assert(target, "OpenPlayerInventory: target is required")
-    local identifier = Framework.GetPlayerIdentifier(target)
-    if not identifier then return false end
-    exports.core_inventory:openInventory(src, 'stash-'.. identifier:gsub(':',''), 'stash', nil, nil, true, nil, false)
+function inventory.openShop(src, shopType)
+    lib.print.debug(('[bridge-inventory] Warning: core_inventory has no server-side shop open export, cannot open shop "%s" for player %s.'):format(shopType, src))
+    return false
 end
 
-return Inventory
+function inventory.registerHook(eventName, callback, options)
+    lib.print.debug(('[bridge-inventory] Warning: core_inventory has no hook API, cannot register hook for event "%s".'):format(eventName))
+    return false
+end
+
+function inventory.removeHooks(hookId)
+    lib.print.debug(('[bridge-inventory] Warning: core_inventory has no hook API, cannot remove hook with id "%s".'):format(hookId))
+    return false
+end
+
+return inventory

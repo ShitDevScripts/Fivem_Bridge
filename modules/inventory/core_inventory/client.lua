@@ -1,83 +1,60 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('core_inventory') == 'missing' then return end
-local core = exports.core_inventory
+local inventory = {}
 
-Inventory = Inventory or {}
+local core = exports['core_inventory']
 
----This will get the name of the in use resource.
----@return string
-Inventory.GetResourceName = function()
-    return "core_inventory"
+local function getItems()
+    local data = core:getInventory()
+
+    if type(data) == 'table' then
+        return data.content or data.items or data
+    end
+
+    return {}
 end
 
-local cachedItemList = nil
---- Return the item info in oxs format, {name, label, stack, weight, description, image}
---- https://docs.c8re.store/core-inventory/exports#client-exports-%E2%80%94-inventory-ui
---- @param item string
---- @return table
-Inventory.GetItemInfo = function(item)
-    local itemList = Inventory.Items()
-    return itemList[item] or {}
-end
+local function countItem(item, metadata)
+    if not metadata then
+        return core:getItemCount(item) or 0
+    end
 
----This will return the entire items table from the inventory in the ox format.
----@return table 
-Inventory.Items = function()
-    if cachedItemList then return cachedItemList end
-    local allItems = core:getItemsList()
-    if not allItems then return {} end
-    local dataRepack = {}
-    for itemName, itemData in pairs(allItems) do
-        if itemData and itemData.name then
-            dataRepack[itemName] = {
-                image = Inventory.GetImagePath(itemData.name),
-                stack = itemData.unique or false
-            }
+    local total = 0
+
+    for _, itemData in pairs(getItems()) do
+        if itemData.name == item and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+            total = total + InventoryItemAmount(itemData)
         end
     end
-    cachedItemList = dataRepack
-    return dataRepack
+
+    return total
 end
 
----Will return boolean if the player has the item.
----@param item string
----@return boolean
-Inventory.HasItem = function(item)
-    return core:hasItem(item, 1)
+function inventory.Items(itemName)
+    local list = core:getItemsList()
+    return NormalizeItemDefinitions(list, itemName)
 end
 
----@description Will return boolean if the player has the item.
----@param item string
----@param requiredCount number (optional)
----@return boolean
-Inventory.HasItem = function(item, requiredCount)
-    return core:getItemCount(item) >= (requiredCount or 1)
-end
-
----This will get the image path for this item, if not found will return placeholder.
----@param item string
----@return string
-Inventory.GetImagePath = function(item)
-    item = Inventory.StripPNG(item)
-    local file = LoadResourceFile("core_inventory", string.format("html/img/%s.png", item))
-    local imagePath = file and string.format("nui://core_inventory/html/img/%s.png", item)
-    return imagePath or "https://avatars.githubusercontent.com/u/47620135"
-end
-
----This will return the players inventory in the format of {name, label, count, slot, metadata}
----@return table
-Inventory.GetPlayerInventory = function()
-    local playerItems = core:getInventory()
-    local repackedTable = {}
-    for _, v in pairs(playerItems) do
-        table.insert(repackedTable, {
-            name = v.name,
-            count = v.count or v.amount,
-            metadata = v.metadata or v.info,
-            slot = v.id or v.slot,
-        })
+function inventory.hasItem(item, count, metadata)
+    if metadata then
+        return countItem(item, metadata) >= (count or 1)
     end
-    return repackedTable
+
+    return core:hasItem(item, count or 1)
 end
 
-return Inventory
+function inventory.getImagePath(itemName)
+    return InventoryBuildImageUrl(itemName, inventory.Items(itemName), 'core_inventory', 'html/img')
+end
+
+function inventory.getItemInfo(itemName)
+    return InventoryBuildItemInfo(itemName, inventory.Items(itemName), 'core_inventory', 'html/img')
+end
+
+function inventory.getItemCount(item, metadata)
+    return countItem(item, metadata)
+end
+
+function inventory.getInventoryItems()
+    return NormalizeInventoryItems(getItems())
+end
+
+return inventory

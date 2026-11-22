@@ -1,11 +1,6 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('qb-doorlock') == 'missing' then return end
+local doorlock = {}
 
-Doorlock = Doorlock or {}
-
----This will get the closest door to the ped
----@return string | nil
-Doorlock.GetClosestDoor = function()
+function doorlock.GetClosestDoor()
     local ped = PlayerPedId()
     local closestDoor = exports["qb-doorlock"]:GetClosestDoor()
     if Table.CheckPopulated(closestDoor) then return closestDoor end
@@ -23,10 +18,8 @@ Doorlock.GetClosestDoor = function()
     return door
 end
 
----This will get the name of the in use resource.
----@return string
-Doorlock.GetResourceName = function()
+function doorlock.GetResourceName()
     return 'qb-doorlock'
 end
 
-return Doorlock
+return doorlock

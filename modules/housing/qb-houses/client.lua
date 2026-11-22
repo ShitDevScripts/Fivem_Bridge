@@ -1,11 +1,7 @@
-if GetResourceState('qb-houses') == 'missing' then return end
+local housing = {}
 
-Housing = Housing or {}
-
----This will get the name of the in use resource.
----@return string
-Housing.GetResourceName = function()
+function housing.GetResourceName()
     return "qb-houses"
 end
 
-return Housing
+return housing

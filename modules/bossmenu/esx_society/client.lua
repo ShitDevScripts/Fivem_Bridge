@@ -1,12 +1,8 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('esx_society') ~= 'started' then return end
+local bossmenu = {}
 
-BossMenu = BossMenu or {}
+RegisterNetEvent('fivem_Bridge:client:openBossMenu:esx', function(jobName, jobType)
+    if source ~= 65535 then return end
+    TriggerEvent('esx_society:openBossMenu', jobName)
+end)
 
----This will get the name of the module being used.
----@return string
-BossMenu.GetResourceName = function()
-    return "esx_society"
-end
-
-return BossMenu
+return bossmenu

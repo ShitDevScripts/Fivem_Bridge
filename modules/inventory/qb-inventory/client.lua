@@ -1,61 +1,57 @@
----@diagnostic disable: duplicate-set-field
-if GetResourceState('qb-inventory') == 'missing' then return end
-if GetResourceState('codem-inventory') ~= 'missing' then return end
-if GetResourceState('origen_inventory') ~= 'missing' then return end
-local qb = exports['qb-inventory']
+local inventory = {}
 
-Inventory = Inventory or {}
+local qbi = exports['qb-inventory']
+local QBCore = exports['qb-core']:GetCoreObject()
 
----@description This will get the name of the in use resource.
----@return string
-Inventory.GetResourceName = function()
-    return "qb-inventory"
-end
-
----@description Return the item info in oxs format, {name, label, stack, weight, description, image}
----@param item string
----@return table
-Inventory.GetItemInfo = function(item)
-    local itemData = Framework.Shared.Items[item]
-    if not itemData then return {} end
-    return {
-        name = itemData.name,
-        label = itemData.label,
-        stack = itemData.unique,
-        weight = itemData.weight,
-        description = itemData.description,
-        image = Inventory.GetImagePath(itemData.image or itemData.name)
-    }
-end
-
----@description This will return the entire items table from the inventory.
----@return table 
-Inventory.Items = function()
-    return Framework.Shared.Items
-end
-
----@description Will return boolean if the player has the item.
----@param item string
----@param requiredCount number (optional)
----@return boolean
-Inventory.HasItem = function(item, requiredCount)
-    return qb:HasItem(item, requiredCount or 1)
-end
-
----@description This will get the image path for this item, if not found will return placeholder.
----@param item string
----@return string
-Inventory.GetImagePath = function(item)
-    item = Inventory.StripPNG(item)
-    local file = LoadResourceFile("qb-inventory", string.format("html/images/%s.png", item))
-    local imagePath = file and string.format("nui://qb-inventory/html/images/%s.png", item)
-    return imagePath or "https://avatars.githubusercontent.com/u/47620135"
-end
-
-RegisterNetEvent('community_bridge:client:qb-inventory:openStash', function(id, data)
-    if source ~= 65535 then return end
-    TriggerEvent("inventory:client:SetCurrentStash", id)
-    TriggerServerEvent('inventory:server:OpenInventory', 'stash', id, { maxweight = data.weight, slots = data.slots })
+RegisterNetEvent('QBCore:Client:UpdateObject', function()
+    QBCore = exports['qb-core']:GetCoreObject()
 end)
 
-return Inventory
+local function countItem(item, metadata)
+    local items = QBCore.Functions.GetPlayerData().items
+    if not items then return 0 end
+
+    local total = 0
+
+    for _, itemData in pairs(items) do
+        if itemData.name == item and InventoryMetadataMatches(InventoryItemMetadata(itemData), metadata) then
+            total = total + InventoryItemAmount(itemData)
+        end
+    end
+
+    return total
+end
+
+function inventory.Items(itemName)
+    if itemName then
+        return NormalizeItemDefinitions(QBCore.Shared.Items[itemName], itemName)
+    end
+
+    return NormalizeItemDefinitions(QBCore.Shared.Items)
+end
+
+function inventory.hasItem(item, count, metadata)
+    if metadata then
+        return countItem(item, metadata) >= (count or 1)
+    end
+
+    return qbi:HasItem(item, count or 1)
+end
+
+function inventory.getImagePath(itemName)
+    return InventoryBuildImageUrl(itemName, inventory.Items(itemName), 'qb-inventory', 'html/images')
+end
+
+function inventory.getItemInfo(itemName)
+    return InventoryBuildItemInfo(itemName, inventory.Items(itemName), 'qb-inventory', 'html/images')
+end
+
+function inventory.getItemCount(item, metadata)
+    return countItem(item, metadata)
+end
+
+function inventory.getInventoryItems()
+    return NormalizeInventoryItems(QBCore.Functions.GetPlayerData().items or {})
+end
+
+return inventory
