@@ -1,4 +1,4 @@
-local ClientHelpers = require '@fivem_Bridge/modules/framework/client_helpers'
+local ClientHelpers = bridgeRequire('modules/framework/client_helpers')
 
 local CachedPlayerJob = nil
 

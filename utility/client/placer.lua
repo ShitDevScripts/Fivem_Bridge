@@ -1,5 +1,5 @@
-local controls = require '@fivem_Bridge/utility/client/placement_controls'
-local ray = require '@fivem_Bridge/utility/client/camera_ray'
+local controls = bridgeRequire('utility/client/placement_controls')
+local ray = bridgeRequire('utility/client/camera_ray')
 
 local placing = false
 local preview

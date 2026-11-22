@@ -1,5 +1,5 @@
-local BridgePlayers = require '@fivem_Bridge/modules/framework/player_registry'
-local ServerHelpers = require '@fivem_Bridge/modules/framework/server_helpers'
+local BridgePlayers = bridgeRequire('modules/framework/player_registry')
+local ServerHelpers = bridgeRequire('modules/framework/server_helpers')
 
 local ESX = exports.es_extended:getSharedObject()
 local framework = {}

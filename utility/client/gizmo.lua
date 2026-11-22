@@ -1,5 +1,5 @@
-local DataView = require '@fivem_Bridge/utility/client/dataview'
-local controls = require '@fivem_Bridge/utility/client/placement_controls'
+local DataView = bridgeRequire('utility/client/dataview')
+local controls = bridgeRequire('utility/client/placement_controls')
 
 local isCursorActive = false
 local gizmoEnabled = false

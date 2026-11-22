@@ -1,4 +1,6 @@
-if not LoadResourceFile('Fivem_Bridge', 'web/build/dui_surface.html') then
+local bridgeHost = BridgeHostResource or GetCurrentResourceName()
+
+if not LoadResourceFile(bridgeHost, 'web/build/dui_surface.html') then
     local function noUi()
         if Config.Debug then
             print('^3[Fivem_Bridge] DUI surfaces disabled: add web/build/dui_surface.html to enable them.^0')
@@ -18,8 +20,8 @@ if not LoadResourceFile('Fivem_Bridge', 'web/build/dui_surface.html') then
     return
 end
 
-local controls = require '@fivem_Bridge/utility/client/placement_controls'
-local ray = require '@fivem_Bridge/utility/client/camera_ray'
+local controls = bridgeRequire('utility/client/placement_controls')
+local ray = bridgeRequire('utility/client/camera_ray')
 
 local laserLine = { 84, 227, 129 }
 local laserDot = { 34, 139, 230 }
@@ -33,7 +35,7 @@ local minDui, maxDui = 256, 2048
 local drawDistance = 60.0
 local placementMax = 20.0
 local poolMax = 8
-local shellUrl = 'nui://Fivem_Bridge/web/build/dui_surface.html'
+local shellUrl = ('nui://%s/web/build/dui_surface.html'):format(bridgeHost)
 local poolShellUrl = shellUrl .. '#pool=1'
 
 local creatorActive, cancelPlacement = false, false

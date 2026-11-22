@@ -6,6 +6,16 @@ local hostResource = LoadResourceFile(thisResource, "config/bridge_resources.lua
 local isHost = thisResource == hostResource
 local runtime = IsDuplicityVersion() and "server" or "client"
 
+-- Resource names are case-sensitive on Linux hosts. Helper files always live
+-- in the host resource, so resolve its real name once instead of hardcoding
+-- "@fivem_Bridge" (which breaks when the folder is named "Fivem_Bridge").
+_ENV.BridgeHostResource = hostResource
+
+local function bridgeRequire(path)
+    return require(("@%s/%s"):format(hostResource, path))
+end
+_ENV.bridgeRequire = bridgeRequire
+
 if isHost then
     exports("BridgeEnvironment", function()
         return { config = Config, resource = hostResource }
