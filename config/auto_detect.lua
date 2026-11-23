@@ -11,7 +11,7 @@ local modules = {
     progressbar = { configKey = "ProgressBar", "ox_lib", "lation_ui", "wasabi_uikit", "progressbar", "zsx_uiv2" },
     bossmenu = { configKey = "BossMenu", "qbx_management", "qb-management", "esx_society", "vms_bossmenu", "tk_bosstablet", "okokBossMenu", "codem-bossmenu", "zat-bossmenu", "m-BossMenu", "ShitDevScripts-Bossmenu" },
     dispatch = { configKey = "Dispatch", fallback = "internal", "ps-dispatch", "cd_dispatch", "tk_dispatch", "rcore_dispatch", "lb-tablet", "origen_police", "core_dispatch", "kartik-mdt", "codem-dispatch", "wasabi_mdt", "redutzu-mdt" },
-    banking = { configKey = "Banking", fallback = "internal", "qb-banking", "Renewed-Banking", "okokBanking", "fd_banking", "kartik-banking", "wasabi_banking", "tgiann-bank", "tgg-banking", "DHS-BankingSim", "ShitDevScripts-Banking" },
+    banking = { configKey = "Banking", fallback = "internal", "qb-banking", "Renewed-Banking", "okokBanking", "fd_banking", "kartik-banking", "wasabi_banking", "tgiann-bank", "tgg-banking", "ShitDevScripts-Banking" },
     doorlock = { configKey = "Doorlock", fallback = "internal", "ox_doorlock", "qb-doorlock", "rcore_doorlock", "doors_creator" },
     housing = { configKey = "Housing", fallback = "internal", "ps-housing", "qb-houses", "qb-appartments", "bcs-housing", "esx_property" },
     phone = { configKey = "Phone", fallback = "internal", "lb-phone", "gksphone", "okokPhone", "qb-phone", "qs-smartphone", "yseries" },

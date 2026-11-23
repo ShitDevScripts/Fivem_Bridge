@@ -6,9 +6,6 @@ local hostResource = LoadResourceFile(thisResource, "config/bridge_resources.lua
 local isHost = thisResource == hostResource
 local runtime = IsDuplicityVersion() and "server" or "client"
 
--- Resource names are case-sensitive on Linux hosts. Helper files always live
--- in the host resource, so resolve its real name once instead of hardcoding
--- "@fivem_Bridge" (which breaks when the folder is named "Fivem_Bridge").
 _ENV.BridgeHostResource = hostResource
 
 local function bridgeRequire(path)
@@ -75,11 +72,7 @@ local function wrapHostApi(hostApi, useNoopFallback)
     })
 end
 
-local hostBacked = {
-    taskGroups = { export = "TaskGroups" },
-    dialogue = { export = "Dialogue", clientOnly = true },
-    task = { export = "Task", clientOnly = true },
-}
+local hostBacked = {}
 
 local coreBoundInventories = {
     ["qb-inventory"] = true,
@@ -223,20 +216,6 @@ local bridge = setmetatable({
     end,
 })
 
-if runtime == "client" then
-    function bridge.registerCommand(commandName, callback, restricted)
-        RegisterCommand(commandName, callback, restricted == true)
-    end
-
-    function bridge.registerKeybind(commandName, description, defaultKey, callback)
-        RegisterCommand(commandName, callback, false)
-
-        if type(defaultKey) == 'string' and defaultKey ~= '' then
-            RegisterKeyMapping(commandName, description, 'keyboard', defaultKey)
-        end
-    end
-end
-
 if not isHost then
     local host = exports[hostResource]
 
@@ -279,13 +258,6 @@ if isHost then
             return servedModule("banking")
         end)
     end
-    exports("GetTheme", function()
-        return bridge.theme.get()
-    end)
-    exports("GetThemeCss", function()
-        return bridge.theme.css()
-    end)
-
     for module in pairs(providers) do
         Citizen.CreateThreadNow(function()
             if rawget(bridge, module) == nil then
